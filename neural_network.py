@@ -13,14 +13,10 @@ from keras.callbacks import EarlyStopping
 np.set_printoptions(suppress=True)
 pd.set_option('display.float_format', lambda x: '%.10f' % x)
 
-csv_path="Lili.tsv"
-model_path="model77.h5"
+#csv_path="Lili.tsv"
+model_path="model.h5"
 
 class NeuralNetwork:
-    @property
-    def dataset(self)->int:
-        return self.df
-    
     def __init__(self) -> None:
         self.wholeData, self.unratedData ,self.df,self.X,self.y = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
         self.X_train, self.X_test, self.y_train, self.y_test=np.ndarray, np.ndarray, np.ndarray, np.ndarray
@@ -31,28 +27,45 @@ class NeuralNetwork:
         self.model=None
         self.accuracy=None
 
+    @property
+    def getDataset(self)->pd.DataFrame:
+        return self.df
+    
+    @property
+    def whole(self)->pd.DataFrame:
+        return self.wholeData
+    
+    @whole.setter
+    def whole(self, value):
+        self.wholeData=value
+        
     #@staticmethod 
     def loadCsv(self, csv_path:str):
         self.wholeData = pd.read_csv(csv_path, sep='\t', header=0, quoting=3)
-        self.deleteRowsWthoutScore()
+
+    def editRatings(self, csv_path:str):
+        self.wholeData=self.wholeData.sort_values(by = 'numVotes', ascending=False)
+        #for index, row in (self.wholeData[self.wholeData['score'].isna()]).iterrows():
+            # print(row['primaryTitle'], ": ", row['startYear'], "(",row['tconst'],")")
+            # rating=input()
+            # if rating=="e":
+            #     break
+            # if rating==" ":
+            #     self.wholeData.loc[self.wholeData['tconst']==row['tconst'], ['score']] = np.nan
+            # else: 
+            #     self.wholeData.loc[self.df['tconst']==row['tconst'], ['score']] = rating
+
+        self.wholeData.to_csv(csv_path, sep="\t", index=False)
+
+    def preparation(self):
+        self.deleteRowsWithoutScore()
         features=self.df.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
-        self.X,self.y = features.iloc[:,:-1],features.iloc[:,-1]
+        self.X,self.y = features.iloc[:,:-1] ,tf.keras.utils.to_categorical(features.iloc[:,-1]-1, dtype ="int")
+        #features.iloc[:,:-1],features.iloc[:,-1]
+        print(self.y)
         self.getRowsWithoutScore()
         features=self.unratedData.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
         self.unratedX=features.iloc[:,:-1]
-
-    def editRatings(self):
-        #df.sort_values(by = 'numVotes', ascending=False, inplace=True)
-        for index, row in (self.df[self.df['score'].isna()]).iterrows():
-            print(row['primaryTitle'], ": ", row['startYear'], "(",row['tconst'],")")
-            rating=input()
-            if rating=="e":
-                break
-            if rating==" ":
-                self.df.loc[self.df['tconst']==row['tconst'], ['score']] = np.nan
-            else: 
-                self.df.loc[self.df['tconst']==row['tconst'], ['score']] = rating
-        self.df.to_csv(csv_path, sep="\t", index=False)
 
     def deleteAllRatings(self):
         self.df.iloc[:,-1:]=np.nan
@@ -84,7 +97,7 @@ class NeuralNetwork:
         self.unratedX=binEncoderGenres.fit_transform(self.unratedX)
 
     def trainTestSplit(self, test_size):
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=test_size)
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=test_size, random_state=42)
         self.y_train.astype('int32').dtypes
         self.y_test.astype('int32').dtypes
 
@@ -96,6 +109,7 @@ class NeuralNetwork:
 
     def buildModel(self):
         input_params = self.X_train.shape[1]
+        #print(self.X_train[10])
         self.model=tf.keras.models.Sequential()
         self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
         self.model.add(Dropout(0.5))
@@ -103,12 +117,12 @@ class NeuralNetwork:
         self.model.add(Dropout(0.5))
         self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
         self.model.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
-        self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+        self.model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
     
     def trainModel(self, batchSize:int, epochNum:int, valSplit:int, shuffle:bool):
         es = EarlyStopping(monitor='val_loss', min_delta=0, patience = 100)
         #callbacks=[es]
-        self.trainResult=self.model.fit(self.X_train, self.y_train, batch_size=batchSize, epochs=epochNum, validation_split=valSplit, shuffle=shuffle, verbose=1)
+        self.trainResult=self.model.fit(self.X_train, self.y_train, batch_size=batchSize, epochs=epochNum, validation_split=valSplit, shuffle=shuffle, verbose=0)
 
     def plotResult(self):
         plt.plot(self.trainResult.history['accuracy'], label="train accuracy")
@@ -123,7 +137,8 @@ class NeuralNetwork:
 
     def predict(self):
         self.y_pred=self.model.predict(self.X_test)
-        #print(self.y_pred)
+        #print(self.y_pred[:5])
+        #print(self.y_test[:5])
         self.y_pred=(self.y_pred>0.5)
 
     def confusionMatrix(self):
@@ -145,26 +160,26 @@ class NeuralNetwork:
         #give prediction for all unseen movies between 0 and 1 
 
     def saveModel(self):
-        self.model.save("model"+str(self.accuracy)[2:4]+".h5")
+        self.model.save("model_binary"+str(self.accuracy)[2:4]+".h5")
 
     def loadModel(self):
         self.model = tf.keras.models.load_model(model_path)
 
-nn=NeuralNetwork()
-nn.loadCsv(csv_path=csv_path)
+# nn=NeuralNetwork()
+# nn.loadCsv(csv_path=csv_path)
 
-nn.preprocess()
-nn.trainTestSplit(0.25)
-nn.normalizing()
-nn.buildModel()
-nn.trainModel(batchSize=15, epochNum=350, valSplit=0.2, shuffle=True)
-nn.plotResult()
-nn.getRatingsRatio()
-#nn.loadModel()
-nn.predict()
-nn.confusionMatrix()
-nn.saveModel()
-nn.massPredict()
+# nn.preprocess()
+# nn.trainTestSplit(0.25)
+# nn.normalizing()
+# nn.buildModel()
+# nn.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
+# nn.plotResult()
+# nn.getRatingsRatio()
+# #nn.loadModel()
+# nn.predict()
+# nn.confusionMatrix()
+# nn.saveModel()
+# nn.massPredict()
 
 
 
