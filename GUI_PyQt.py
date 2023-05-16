@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QProgressBar, QDialog, QT
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import Qt, QSize, QBasicTimer
 from PyQt6 import uic, QtWidgets
-import sys, time
+import sys, time, shutil
 import neural_network
 import pandas as pd
 import numpy as np
@@ -39,8 +39,9 @@ class MainWindow(QMainWindow):
 
     def newDataset(self):
         # ask file name and open EditRatingsWindow
-        print('New ds')
-        pass
+        self.filenameWindow=FileNameWindow()
+        self.filenameWindow.show()
+        
 
     def loadDataset(self):
         stackedWidget.setCurrentIndex(1)
@@ -50,6 +51,16 @@ class MainWindow(QMainWindow):
 
     def exit(self):
         pass
+
+class FileNameWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("./UI/FilenameWindow.ui", self)
+        self.ButtonOK.clicked.connect(self.OK)
+    def OK(self):
+        print(self.lineEdit.text())
+        shutil.copy('data.tsv',self.lineEdit.text()+'.tsv')
+        self.close()
 
 class LoadWindow(QMainWindow):
     def __init__(self):
