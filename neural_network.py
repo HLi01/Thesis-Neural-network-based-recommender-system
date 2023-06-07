@@ -26,6 +26,7 @@ class NeuralNetwork:
         self.y_pred=None
         self.model=None
         self.accuracy=None
+        self.filename=''
 
     @property
     def getDataset(self)->pd.DataFrame:
@@ -40,11 +41,21 @@ class NeuralNetwork:
         self.wholeData=value
         
     #@staticmethod 
-    def loadCsv(self, csv_path:str):
-        self.wholeData = pd.read_csv(csv_path, sep='\t', header=0, quoting=3)
-
-    def editRatings(self, csv_path:str):
+    def loadFile(self, path:str):
+        self.wholeData = pd.read_csv(path, sep='\t', header=0, quoting=3)
         self.wholeData=self.wholeData.sort_values(by = 'numVotes', ascending=False)
+
+    def like(self, row: int):
+        self.wholeData.loc[row, 'score']=1
+
+    def disLike(self,row: int):        
+        self.wholeData.loc[row, 'score']=0
+
+    def skip(self, row: int):
+        self.wholeData.loc[row, 'score']=''
+
+    def saveRatings(self, path:str):
+        
         #for index, row in (self.wholeData[self.wholeData['score'].isna()]).iterrows():
             # print(row['primaryTitle'], ": ", row['startYear'], "(",row['tconst'],")")
             # rating=input()
@@ -55,12 +66,12 @@ class NeuralNetwork:
             # else: 
             #     self.wholeData.loc[self.df['tconst']==row['tconst'], ['score']] = rating
 
-        self.wholeData.to_csv(csv_path, sep="\t", index=False)
+        self.wholeData.to_csv(path, sep="\t", index=False)
 
     def preparation(self):
         self.deleteRowsWithoutScore()
         features=self.df.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
-        self.X,self.y = features.iloc[:,:-1] ,tf.keras.utils.to_categorical(features.iloc[:,-1]-1, dtype ="int")
+        self.X,self.y = features.iloc[:,:-1], features.iloc[:,-1]
         #features.iloc[:,:-1],features.iloc[:,-1]
         print(self.y)
         self.getRowsWithoutScore()
@@ -70,18 +81,19 @@ class NeuralNetwork:
     def deleteAllRatings(self):
         self.df.iloc[:,-1:]=np.nan
     
-    def setRating(self, id:str, rating: int):
-        self.df.loc[self.df['tconst']==id, ['score']] = rating
+    # def setRating(self, id:str, rating: int):
+    #     self.df.loc[self.df['tconst']==id, ['score']] = rating
 
-    def deleteRowsWthoutScore(self):
+    def deleteRowsWithoutScore(self):
         self.df=self.wholeData.dropna(subset=['score'], inplace=False)
     
     def getRowsWithoutScore(self):
         self.unratedData=self.df.dropna(subset=['score'], inplace=False)
     
-    def getRatingsRatio(self):
+    def getRatingsRatio(self) -> tuple:
         print("Liked: ",len(self.df[self.df['score'] == 1]))
         print("Disliked: ",len(self.df[self.df['score'] == 0]))
+        return (len(self.df[self.df['score'] == 1]), len(self.df[self.df['score'] == 0]) )
 
     def preprocess(self):
         import category_encoders as ce
@@ -98,8 +110,8 @@ class NeuralNetwork:
 
     def trainTestSplit(self, test_size):
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=test_size, random_state=42)
-        self.y_train.astype('int32').dtypes
-        self.y_test.astype('int32').dtypes
+        #self.y_train.astype('int32').dtypes
+        #self.y_test.astype('int32').dtypes
 
     def normalizing(self):
         scaler = MinMaxScaler().fit(self.X_train)
@@ -139,14 +151,14 @@ class NeuralNetwork:
         self.y_pred=self.model.predict(self.X_test)
         #print(self.y_pred[:5])
         #print(self.y_test[:5])
-        self.y_pred=(self.y_pred>0.5)
+        self.y_pred=(self.y_pred>0.5)#ezt majd ki kell szedni a mass és single predictnél
 
     def confusionMatrix(self):
         from sklearn.metrics import confusion_matrix, accuracy_score
         cm=confusion_matrix(self.y_test,self.y_pred)
-        print(cm)
+        #print(cm)
         self.accuracy=accuracy_score(self.y_test, self.y_pred)
-        print("Accuracy of the model: ",self.accuracy)
+        #print("Accuracy of the model: ",self.accuracy)
 
     def singlePredict(self):
         pass
@@ -159,14 +171,14 @@ class NeuralNetwork:
         print(output[::-1][0:11])
         #give prediction for all unseen movies between 0 and 1 
 
-    def saveModel(self):
+    def saveModel(self, path: str):
         self.model.save("model_binary"+str(self.accuracy)[2:4]+".h5")
 
-    def loadModel(self):
-        self.model = tf.keras.models.load_model(model_path)
+    def loadModel(self, path: str):
+        self.model = tf.keras.models.load_model(path)
 
 # nn=NeuralNetwork()
-# nn.loadCsv(csv_path=csv_path)
+# nn.loadFile(csv_path=csv_path)
 
 # nn.preprocess()
 # nn.trainTestSplit(0.25)
@@ -175,7 +187,7 @@ class NeuralNetwork:
 # nn.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
 # nn.plotResult()
 # nn.getRatingsRatio()
-# #nn.loadModel()
+# #nn.loadModel(model_path)
 # nn.predict()
 # nn.confusionMatrix()
 # nn.saveModel()
