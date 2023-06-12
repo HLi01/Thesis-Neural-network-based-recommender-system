@@ -118,17 +118,26 @@ class NeuralNetwork:
 
     def preprocess(self):
         #preprocessing - binary encoding (titleType)
-        binEncoderTitle=ce.BinaryEncoder(cols=['titleType'])
-        binEncoderTitle.fit(self.X)
-        self.X = binEncoderTitle.transform(self.X)
-        self.unratedX = binEncoderTitle.transform(self.unratedX)
+        self.binEncoderTitle=ce.BinaryEncoder(cols=['titleType'])
+        self.binEncoderTitle.fit(self.X)
+        self.X = self.binEncoderTitle.transform(self.X)
+        self.unratedX = self.binEncoderTitle.transform(self.unratedX)
         #preprocessing - binary encoding (genres)
-        binEncoderGenres=ce.BinaryEncoder(cols=['genres'])
-        binEncoderGenres.fit(self.X)
-        self.X=binEncoderGenres.transform(self.X)
-        self.unratedX=binEncoderGenres.transform(self.unratedX)
+        self.binEncoderGenres=ce.BinaryEncoder(cols=['genres'])
+        self.binEncoderGenres.fit(self.X)
+        self.X=self.binEncoderGenres.transform(self.X)
+        self.unratedX=self.binEncoderGenres.transform(self.unratedX)
         #print(len(self.unratedX['genres'].unique()))
         #print(self.X['genres'].unique())
+    
+    def singlePreprocess(self, singleObject):
+        singleObject.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=True)
+        singleObject = self.binEncoderTitle.transform(singleObject)
+        
+        # binEncoderGenres=ce.BinaryEncoder(cols=['genres'])
+        # binEncoderGenres.fit(self.X)
+        singleObject=self.binEncoderGenres.transform(singleObject)
+        return singleObject
 
     def trainTestSplit(self, test_size):
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=test_size, random_state=42)
@@ -136,12 +145,17 @@ class NeuralNetwork:
         self.y_test.astype('int32').dtypes
 
     def normalizing(self):
-        scaler = MinMaxScaler().fit(self.X_train)
-        self.X_train=scaler.transform(self.X_train)
-        self.X_test=scaler.transform(self.X_test)
+        self.scaler = MinMaxScaler().fit(self.X_train)
+        self.X_train=self.scaler.transform(self.X_train)
+        self.X_test=self.scaler.transform(self.X_test)
         #print(self.X)
         #print(self.unratedX)
-        self.unratedX=scaler.transform(self.unratedX)
+        self.unratedX=self.scaler.transform(self.unratedX)
+
+    def singleNormalizing(self, singleObject):
+        #scaler = MinMaxScaler().fit(self.X_train)
+        singleObject=self.scaler.transform(singleObject)
+        return singleObject
 
     def buildModel(self):
         input_params = self.X_train.shape[1]
@@ -186,8 +200,12 @@ class NeuralNetwork:
         self.accuracy=accuracy_score(self.y_test, self.y_pred01)
         #print("Accuracy of the model: ",self.accuracy)
 
-    def singlePredict(self):
-        pass
+    def singlePredict(self, singleObject):
+        singleObject=self.singlePreprocess(singleObject)
+        singleObject=self.singleNormalizing(singleObject)
+        print('ASD:', singleObject)  
+        self.singlePrediction=self.model.predict(singleObject)
+        return self.singlePrediction
 
     def massPredict(self):
         

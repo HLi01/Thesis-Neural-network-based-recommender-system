@@ -1,4 +1,7 @@
 from neural_network import NeuralNetwork
+from MovieSeries import MovieSeries
+import pandas as pd
+import numpy as np
 
 class Recommender:
     def __init__(self):
@@ -89,3 +92,28 @@ class Recommender:
                 print(idx, ' :', self.nn.top_types[idx],' ', self.nn.top_titles[idx], '(',round(self.nn.top_predictions[idx],5) ,')')
                 self.predictionOrderN.append(f'{self.nn.top_titles[idx]} ({round(self.nn.top_predictions[idx],5)})')
 
+    def makeDataFrame(self, movieObj: MovieSeries):
+        movie_dict = {
+                'tconst': movieObj.tconst,
+                'primaryTitle': movieObj.primaryTitle,
+                'titleType': movieObj.titleType,
+                'overview': movieObj.overview,
+                'startYear': movieObj.startYear,
+                'runtimeMinutes': movieObj.runtimeMinutes,
+                'genres': movieObj.genre,
+                'averageRating': movieObj.averageRating,
+                'numVotes': movieObj.numVotes,
+                'tmdbId': movieObj.tmdbId,
+                'tmdbVoteAvg': movieObj.tmdbVoteAvg,
+                'poster': movieObj.poster
+            }       
+        self.nn.SingleObject=pd.DataFrame(movie_dict, index=[0])
+
+    def singlePrediction(self):
+        output= np.array(self.nn.singlePredict(self.nn.SingleObject)).flatten()[0]
+        print(output)
+        if output < 0.5: 
+            return f"You would most likely not enjoy this movie. ({output:.2f})"
+        else:
+            return f"You would most likely enjoy this movie. ({output:.2f})"
+        

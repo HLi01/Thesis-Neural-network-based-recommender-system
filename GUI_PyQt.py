@@ -7,6 +7,7 @@ import neural_network
 import pandas as pd
 import numpy as np
 from recommender import Recommender
+from MovieSeries import MovieSeries
 
 nn=neural_network.NeuralNetwork()
 rec=Recommender()
@@ -347,6 +348,61 @@ class RecommendationWindow(QMainWindow):
         self.radioButtonSeries.clicked.connect(self.SeriesRadio)
         self.horizontalSlider.valueChanged.connect(self.sliderValueChanged)
         self.currentSliderValue=None
+        self.comboBox_type.addItems(['movie','tvSeries','tvMiniSeries'])
+        self.comboBox_genre.addItems(['Action','Crime','Horror','Comedy','Drama','Animation','Biography','Adventure','Western','Fantasy','Romance','Sci-Fi','Mystery','Family','Documentary','Game-Show'])
+        self.comboBox_type.setCurrentIndex(0)
+        self.comboBox_genre.setCurrentIndex(0)
+        self.comboBox_type.currentIndexChanged.connect(self.handleComboBoxTypeChange)
+        self.comboBox_genre.currentIndexChanged.connect(self.handleComboBoxGenreChange)
+        self.lineEdit_tconst.textChanged.connect(self.handleLineEdit_tconst)
+        self.lineEdit_title.textChanged.connect(self.handlelineEdit_title)
+        self.lineEdit_overview.textChanged.connect(self.handlelineEdit_overview)
+        self.lineEdit_startYear.textChanged.connect(self.handlelineEdit_startYear)
+        self.lineEdit_runtime.textChanged.connect(self.handlelineEdit_runtime)
+        self.lineEdit_avgratingimdb.textChanged.connect(self.handlelineEdit_avgratingimdb)
+        self.lineEdit_numvotes.textChanged.connect(self.handlelineEdit_numvotes)
+        self.lineEdit_tmdbId.textChanged.connect(self.handlelineEdit_tmdbId)
+        self.lineEdit_tmdbvoteavg.textChanged.connect(self.handlelineEdit_tmdbvoteavg)
+        self.lineEdit_poster.textChanged.connect(self.handleLinelineEdit_poster)
+        self.moviesAndSeries=MovieSeries()
+        #self.selectedType=None
+        #self.selectedGenre=None
+
+    def handleLineEdit_tconst(self):
+        self.moviesAndSeries.tconst=self.lineEdit_tconst.text()
+
+    def handlelineEdit_title(self):
+        self.moviesAndSeries.primaryTitle=self.lineEdit_title.text()
+
+    def handlelineEdit_overview(self):
+        self.moviesAndSeries.overview=self.lineEdit_overview.text()
+
+    def handlelineEdit_startYear(self):
+        self.moviesAndSeries.startYear=self.lineEdit_startYear.text()
+
+    def handlelineEdit_runtime(self):
+        self.moviesAndSeries.runtimeMinutes=self.lineEdit_runtime.text()
+
+    def handlelineEdit_avgratingimdb(self):
+        self.moviesAndSeries.averageRating=self.lineEdit_avgratingimdb.text()
+        
+    def handlelineEdit_numvotes(self):
+        self.moviesAndSeries.numVotes=self.lineEdit_numvotes.text()
+
+    def handlelineEdit_tmdbId(self):
+        self.moviesAndSeries.tmdbId=self.lineEdit_tmdbId.text()
+
+    def handlelineEdit_tmdbvoteavg(self):
+        self.moviesAndSeries.tmdbVoteAvg=self.lineEdit_tmdbvoteavg.text()
+
+    def handleLinelineEdit_poster(self):
+        self.moviesAndSeries.poster=self.lineEdit_poster.text()
+
+    def handleComboBoxTypeChange(self):
+        self.moviesAndSeries.titleType=self.comboBox_type.currentText()
+
+    def handleComboBoxGenreChange(self):
+        self.moviesAndSeries.genre=self.comboBox_genre.currentText()
 
     def showEvent(self, event):
         self.AllRadio()
@@ -399,9 +455,6 @@ class RecommendationWindow(QMainWindow):
     #         print(self.currentSliderValue)
     #         self.currentSliderValue=self.currentSliderValue*10
     #         self.listWidget.clear()
-            
-
-            
     #         if self.checkBoxMovies.isChecked() and self.checkBoxSeries.isChecked():
     #             print('all')
     #             rec.massRecommend(self.currentSliderValue,'all')
@@ -418,9 +471,27 @@ class RecommendationWindow(QMainWindow):
     # def recommend(self):
     #     if nn.model!=None:
     #         nn.massPredict(10,'all')
-                
+    def clear(self):
+        self.lineEdit_tconst.clear()
+        self.lineEdit_title.clear()
+        self.lineEdit_overview.clear()
+        self.lineEdit_startYear.clear()
+        self.lineEdit_runtime.clear()
+        self.lineEdit_avgratingimdb.clear()
+        self.lineEdit_numvotes.clear()
+        self.lineEdit_tmdbId.clear()
+        self.lineEdit_tmdbvoteavg.clear()
+        self.lineEdit_poster.clear()
+        self.comboBox_type.setCurrentIndex(0)
+        self.comboBox_genre.setCurrentIndex(0)
+
     def singlePredict(self):
-        pass
+        try:
+            rec.makeDataFrame(self.moviesAndSeries)
+            self.labelAccuracy.setText(rec.singlePrediction())
+        except:
+            QMessageBox.warning(self, 'Error', 'Please fill in the required field.')
+        self.clear()
 
 class HelpWindow(QMainWindow):
     def __init__(self):
