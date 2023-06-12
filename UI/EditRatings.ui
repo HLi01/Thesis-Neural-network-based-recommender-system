@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1980</width>
-    <height>1080</height>
+    <height>1131</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,19 +15,25 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../images/video.png</normaloff>../images/video.png</iconset>
+    <normaloff>C:/Users/Lili/.designer/images/video.png</normaloff>C:/Users/Lili/.designer/images/video.png</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: rgb(189, 205, 214);</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_5" stretch="4,1">
+    <property name="leftMargin">
+     <number>20</number>
+    </property>
+    <property name="rightMargin">
+     <number>20</number>
+    </property>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
+       <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
         <property name="spacing">
-         <number>100</number>
+         <number>10</number>
         </property>
         <property name="leftMargin">
          <number>20</number>
@@ -44,19 +50,37 @@
         <item>
          <widget class="QLabel" name="labelTitle">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>600</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="font">
            <font>
             <family>Rockwell</family>
-            <pointsize>28</pointsize>
+            <pointsize>36</pointsize>
            </font>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
           </property>
           <property name="text">
            <string/>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -78,7 +102,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../images/Red_X.svg.png</normaloff>../images/Red_X.svg.png</iconset>
+              <normaloff>C:/Users/Lili/.designer/images/Red_X.svg.png</normaloff>C:/Users/Lili/.designer/images/Red_X.svg.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -93,15 +117,15 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
+       <layout class="QVBoxLayout" name="verticalLayout_4" stretch="0">
         <property name="leftMargin">
-         <number>100</number>
+         <number>10</number>
         </property>
         <property name="topMargin">
          <number>20</number>
         </property>
         <property name="rightMargin">
-         <number>100</number>
+         <number>10</number>
         </property>
         <property name="bottomMargin">
          <number>20</number>
@@ -109,14 +133,14 @@
         <item>
          <widget class="QLabel" name="labelPicture">
           <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+           <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
           <property name="maximumSize">
            <size>
-            <width>500</width>
+            <width>700</width>
             <height>16777215</height>
            </size>
           </property>
@@ -197,7 +221,7 @@ border-radius: 20px;</string>
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</normaloff>../images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</iconset>
+              <normaloff>C:/Users/Lili/.designer/images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</normaloff>C:/Users/Lili/.designer/images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -216,16 +240,16 @@ border-radius: 20px;</string>
     <item>
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <property name="leftMargin">
-       <number>10</number>
+       <number>20</number>
       </property>
       <property name="topMargin">
-       <number>10</number>
+       <number>20</number>
       </property>
       <property name="rightMargin">
-       <number>10</number>
+       <number>20</number>
       </property>
       <property name="bottomMargin">
-       <number>10</number>
+       <number>20</number>
       </property>
       <item>
        <widget class="QLabel" name="labelDescription">
@@ -237,24 +261,33 @@ border-radius: 20px;</string>
         </property>
         <property name="maximumSize">
          <size>
-          <width>16777215</width>
+          <width>1900</width>
           <height>300</height>
          </size>
         </property>
         <property name="font">
          <font>
           <family>Rockwell</family>
-          <pointsize>12</pointsize>
+          <pointsize>16</pointsize>
          </font>
         </property>
+        <property name="styleSheet">
+         <string notr="true">padding: 10px;</string>
+        </property>
         <property name="frameShape">
-         <enum>QFrame::Box</enum>
+         <enum>QFrame::NoFrame</enum>
         </property>
         <property name="text">
          <string/>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+        <property name="margin">
+         <number>20</number>
         </property>
        </widget>
       </item>

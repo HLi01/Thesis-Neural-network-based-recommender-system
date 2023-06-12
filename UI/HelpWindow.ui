@@ -15,27 +15,24 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../images/video.png</normaloff>../images/video.png</iconset>
+    <normaloff>C:/Users/Lili/.designer/images/video.png</normaloff>C:/Users/Lili/.designer/images/video.png</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: rgb(189, 205, 214);</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,6">
-    <property name="spacing">
-     <number>20</number>
-    </property>
+   <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,3,0">
     <property name="leftMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="topMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="rightMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="bottomMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <item>
      <widget class="QLabel" name="label">
@@ -62,7 +59,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</string>
+       <string/>
       </property>
       <property name="wordWrap">
        <bool>true</bool>
@@ -74,6 +71,42 @@
        <bool>false</bool>
       </property>
      </widget>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QPushButton" name="ButtonBack">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>400</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Rockwell</family>
+          <pointsize>30</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+          <strikeout>false</strikeout>
+         </font>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(243, 222, 186);
+border-radius: 20px;</string>
+        </property>
+        <property name="text">
+         <string>Back to main menu</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>

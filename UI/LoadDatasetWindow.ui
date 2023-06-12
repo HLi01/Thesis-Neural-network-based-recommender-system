@@ -15,13 +15,13 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../images/video.png</normaloff>../images/video.png</iconset>
+    <normaloff>C:/Users/Lili/.designer/images/video.png</normaloff>C:/Users/Lili/.designer/images/video.png</iconset>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: rgb(189, 205, 214);</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout" columnstretch="1,5">
+   <layout class="QGridLayout" name="gridLayout_2">
     <property name="leftMargin">
      <number>20</number>
     </property>
@@ -34,22 +34,22 @@
     <property name="bottomMargin">
      <number>20</number>
     </property>
-    <property name="horizontalSpacing">
-     <number>20</number>
+    <property name="spacing">
+     <number>10</number>
     </property>
     <item row="0" column="0">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="leftMargin">
-       <number>100</number>
+     <layout class="QVBoxLayout" name="verticalLayout_3" stretch="2,2,1,2,2">
+      <property name="spacing">
+       <number>0</number>
       </property>
-      <property name="topMargin">
-       <number>100</number>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
+      </property>
+      <property name="leftMargin">
+       <number>20</number>
       </property>
       <property name="rightMargin">
-       <number>100</number>
-      </property>
-      <property name="bottomMargin">
-       <number>100</number>
+       <number>20</number>
       </property>
       <item>
        <widget class="QPushButton" name="ButtonLoadDataset">
@@ -116,6 +116,69 @@ border-radius: 20px;</string>
        </widget>
       </item>
       <item>
+       <widget class="QCheckBox" name="checkBox">
+        <property name="minimumSize">
+         <size>
+          <width>50</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Rockwell</family>
+          <pointsize>16</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Exclude alredy rated rows</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>40</width>
+          <height>40</height>
+         </size>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="SkipRatingsButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Rockwell</family>
+          <pointsize>30</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+          <strikeout>false</strikeout>
+         </font>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(243, 222, 186);
+border-radius: 20px;</string>
+        </property>
+        <property name="text">
+         <string>Skip Ratings</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="ButtonBack">
         <property name="minimumSize">
          <size>
@@ -161,6 +224,16 @@ border-radius: 20px;</string>
        <number>30</number>
       </property>
       <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="value">
+         <number>0</number>
+        </property>
+        <property name="textVisible">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLabel" name="labelFileName">
         <property name="font">
          <font>
@@ -183,20 +256,7 @@ border-radius: 20px;</string>
        </widget>
       </item>
       <item>
-       <widget class="QTableView" name="tableView">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>1200</width>
-          <height>0</height>
-         </size>
-        </property>
-       </widget>
+       <widget class="QTableWidget" name="tableWidget"/>
       </item>
       <item>
        <widget class="QLabel" name="labelRows">
