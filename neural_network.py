@@ -1,4 +1,5 @@
 import pandas as pd
+import category_encoders as ce
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -9,6 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.compose import ColumnTransformer
 from keras.layers.core import Dropout
 from keras.callbacks import EarlyStopping
+from sklearn.metrics import confusion_matrix, accuracy_score
 
 np.set_printoptions(suppress=True)
 pd.set_option('display.float_format', lambda x: '%.10f' % x)
@@ -24,9 +26,10 @@ class NeuralNetwork:
         self.model=None
         self.trainResult=tf.keras.callbacks.History
         self.y_pred=None
-        self.model=None
         self.accuracy=None
         self.filename=''
+        self.modelPath=''
+        self.top_movies=list()
 
     @property
     def getDataset(self)->pd.DataFrame:
@@ -68,15 +71,32 @@ class NeuralNetwork:
 
         self.wholeData.to_csv(path, sep="\t", index=False)
 
+    def getTypeNumbers(self):
+        return len(self.df['titleType'].unique())
+    
+    def getGenreNumbers(self):
+        return len(self.df['genres'].unique())
+
     def preparation(self):
+        # typeNumbers=self.getTypeNumbers()
+        # if typeNumbers<3:
+        #     self.df.insert(0, 'column_name', value)
+                
+        # genreNumbers=self.getGenreNumbers()
+        # if genreNumbers<21:
+        #     for i in range(0,3-genreNumbers):
         self.deleteRowsWithoutScore()
         features=self.df.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
         self.X,self.y = features.iloc[:,:-1], features.iloc[:,-1]
         #features.iloc[:,:-1],features.iloc[:,-1]
-        print(self.y)
+        #print(self.y)
         self.getRowsWithoutScore()
+        self.unratedXTitles=self.unratedData['primaryTitle']
+        self.unratedXTypes=self.unratedData['titleType']
         features=self.unratedData.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
         self.unratedX=features.iloc[:,:-1]
+        print(self.unratedX['genres'].unique())
+        print(self.X['genres'].unique())
 
     def deleteAllRatings(self):
         self.df.iloc[:,-1:]=np.nan
@@ -88,35 +108,38 @@ class NeuralNetwork:
         self.df=self.wholeData.dropna(subset=['score'], inplace=False)
     
     def getRowsWithoutScore(self):
-        self.unratedData=self.df.dropna(subset=['score'], inplace=False)
+        self.unratedData=self.wholeData[self.wholeData['score'].isna()]
     
     def getRatingsRatio(self) -> tuple:
-        print("Liked: ",len(self.df[self.df['score'] == 1]))
-        print("Disliked: ",len(self.df[self.df['score'] == 0]))
-        return (len(self.df[self.df['score'] == 1]), len(self.df[self.df['score'] == 0]) )
+        #print("Liked: ",len(self.wholeData[self.wholeData['score'] == 1]))
+        #print("Disliked: ",len(self.wholeData[self.wholeData['score'] == 0]))
+        return (len(self.wholeData[self.wholeData['score'] == 1]), len(self.wholeData[self.wholeData['score'] == 0]) )
 
     def preprocess(self):
-        import category_encoders as ce
         #preprocessing - binary encoding (titleType)
         binEncoderTitle=ce.BinaryEncoder(cols=['titleType'])
         binEncoderTitle.fit(self.X)
-        self.X = binEncoderTitle.fit_transform(self.X)
-        self.unratedX = binEncoderTitle.fit_transform(self.unratedX)
+        self.X = binEncoderTitle.transform(self.X)
+        self.unratedX = binEncoderTitle.transform(self.unratedX)
         #preprocessing - binary encoding (genres)
         binEncoderGenres=ce.BinaryEncoder(cols=['genres'])
         binEncoderGenres.fit(self.X)
-        self.X=binEncoderGenres.fit_transform(self.X)
-        self.unratedX=binEncoderGenres.fit_transform(self.unratedX)
+        self.X=binEncoderGenres.transform(self.X)
+        self.unratedX=binEncoderGenres.transform(self.unratedX)
+        #print(len(self.unratedX['genres'].unique()))
+        #print(self.X['genres'].unique())
 
     def trainTestSplit(self, test_size):
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=test_size, random_state=42)
-        #self.y_train.astype('int32').dtypes
-        #self.y_test.astype('int32').dtypes
+        self.y_train.astype('int32').dtypes
+        self.y_test.astype('int32').dtypes
 
     def normalizing(self):
         scaler = MinMaxScaler().fit(self.X_train)
         self.X_train=scaler.transform(self.X_train)
         self.X_test=scaler.transform(self.X_test)
+        #print(self.X)
+        #print(self.unratedX)
         self.unratedX=scaler.transform(self.unratedX)
 
     def buildModel(self):
@@ -147,35 +170,67 @@ class NeuralNetwork:
         plt.legend()
         plt.show()
 
-    def predict(self):
+    def prediction(self):
+        print(self.X_train[0].shape)
+        print(self.X_test[0].shape)
         self.y_pred=self.model.predict(self.X_test)
         #print(self.y_pred[:5])
         #print(self.y_test[:5])
-        self.y_pred=(self.y_pred>0.5)#ezt majd ki kell szedni a mass és single predictnél
+        self.y_pred01=(self.y_pred>0.5)#ezt majd ki kell szedni a mass és single predictnél
+        self.accuracy=accuracy_score(self.y_test, self.y_pred01)
 
     def confusionMatrix(self):
-        from sklearn.metrics import confusion_matrix, accuracy_score
         cm=confusion_matrix(self.y_test,self.y_pred)
         #print(cm)
-        self.accuracy=accuracy_score(self.y_test, self.y_pred)
+        self.accuracy=accuracy_score(self.y_test, self.y_pred01)
         #print("Accuracy of the model: ",self.accuracy)
 
     def singlePredict(self):
         pass
 
-    def massPredict(self):
+    def massPredict(self, n, filter):
+        self.top_movies.clear()
         predicts=self.model.predict(self.unratedX)
         predicts.astype(float)
-        #Output = sorted(predicts, key = lambda x:float(x))[::-1]
-        output=sorted(predicts, key=float)
-        print(output[::-1][0:11])
-        #give prediction for all unseen movies between 0 and 1 
+        predicts=np.array(predicts).flatten()
+        if filter=='movies':
+            top_indices=np.argsort(predicts)[::-1]
+            idx=0
+            for i in top_indices:
+                if idx<n:
+                    if self.unratedXTypes.iloc[i]=='movie':
+                        idx+=1
+                        print(idx, ' ', self.unratedXTitles.iloc[i])
+                        self.top_movies.append(self.unratedXTitles.iloc[i])    
+                else: 
+                    break
+            print(self.top_movies)
+        elif filter=='series':
+            top_indices=np.argsort(predicts)[::-1]
+            idx=0
+            for i in top_indices:
+                if idx<n:
+                    if self.unratedXTypes.iloc[i]=='tvSeries' or self.unratedXTypes.iloc[i]=='tvMiniSeries':
+                        idx+=1
+                        self.top_movies.append(self.unratedXTitles.iloc[i])    
+                else: 
+                    break
+            print(self.top_movies)
+        else: 
+            top_indices=np.argsort(predicts)[::-1][:n]
+            print(top_indices[:n])
+            self.top_movies = [self.unratedXTitles.iloc[i] for i in top_indices]
+            print(self.top_movies)
+    def mapping(self):
+        pass
 
-    def saveModel(self, path: str):
-        self.model.save("model_binary"+str(self.accuracy)[2:4]+".h5")
+    def saveModel(self):
+        #self.model.save("model_binary"+str(self.accuracy)[2:4]+".h5")
+        self.model.save(self.modelPath)
 
     def loadModel(self, path: str):
         self.model = tf.keras.models.load_model(path)
+        self.modelPath=path
 
 # nn=NeuralNetwork()
 # nn.loadFile(csv_path=csv_path)

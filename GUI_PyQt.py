@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow,QProgressBar, QDialog, QTableView, QWidget, QFileDialog, QMessageBox, QTableWidgetItem, QLabel, QLineEdit, QPushButton, QTextEdit, QGridLayout, QHeaderView, QVBoxLayout, QScrollArea
 from PyQt6.QtGui import QIcon, QPixmap, QImage, QColor
-from PyQt6.QtCore import Qt, QSize, QBasicTimer
+from PyQt6.QtCore import Qt, QSize, QBasicTimer, QEvent, pyqtSignal
 from PyQt6 import uic, QtWidgets
 import sys, time, shutil, requests
 import neural_network
@@ -58,7 +58,7 @@ class FileNameWindow(QDialog):
     def OK(self):
         #print(self.lineEdit.text())
         nn.filename=self.lineEdit.text()+'.tsv'
-        shutil.copy('data.tsv',nn.filename)
+        shutil.copy('base.tsv',nn.filename)
         self.close()
         nn.loadFile(path=nn.filename)
         stackedWidget.setCurrentIndex(2)
@@ -82,6 +82,7 @@ class LoadWindow(QMainWindow):
         self.setWindowTitle(self.windowTitle())
         self.showMaximized()
         self.app=app
+        #self.customEventSignal = pyqtSignal()
         self.progressBar.setVisible(False)
         self.timer = QBasicTimer()
         self.step = 100
@@ -153,6 +154,8 @@ class LoadWindow(QMainWindow):
 
     def editRatings(self):
         stackedWidget.setCurrentIndex(2)
+        #custom_event = CustomEvent(QEvent.Type.User)
+        #self.customEventSignal.emit()
 
     def back(self):
         stackedWidget.setCurrentIndex(0)
@@ -176,21 +179,41 @@ class EditRatingsWindow(QMainWindow):
     def showEvent(self, event):
         self.update_label_text()
 
+    # def handleCustomEvent(self):
+    #     # Itt kezeld a saját eseményt
+    #     print("Saját esemény érkezett!")
+    #     self.update_label_text()
+
+    def event(self, event):
+        if event.type() == QEvent.Type.User:
+            # Hívjuk meg a saját esemény kezelőmet
+            self.handleCustomEvent(event)
+        return super().event(event)
+
     def update_label_text(self):
         num_rows = len(nn.wholeData)
         if num_rows > 0:
+            print(self.current_row)
             row_data = nn.wholeData.iloc[self.current_row]
-            #print(excludeAlredyRated)
-            if excludeAlredyRated and row_data['score']== 0 or row_data['score']== 1:
-                self.next_row()
-            else:
+            if excludeAlredyRated:
+                if row_data['score']== 0 or row_data['score']== 1:
+                    self.next_row()
+                else: 
+                    self.labelTitle.setText(f"({self.current_row+1}) {row_data['primaryTitle']}")
+                    print(row_data['primaryTitle'])
+                    self.labelDescription.setText(row_data['overview'])
+                    url_image = row_data.loc['poster']
+                    image = QImage()
+                    image.loadFromData(requests.get(url_image).content)
+                    self.labelPicture.setPixmap(QPixmap(image))
+            else: 
                 self.labelTitle.setText(f"({self.current_row+1}) {row_data['primaryTitle']}")
-                #print(row_data['primaryTitle'])
                 self.labelDescription.setText(row_data['overview'])
                 url_image = row_data.loc['poster']
                 image = QImage()
                 image.loadFromData(requests.get(url_image).content)
                 self.labelPicture.setPixmap(QPixmap(image))
+                
 
     def previous_row(self):
         if self.current_row > 0:
@@ -227,18 +250,30 @@ class EditRatingsWindow(QMainWindow):
             self.skip()
         elif event.key() == Qt.Key.Key_Escape:
             self.esc()
+        elif event.key() == Qt.Key.Key_Left:
+            self.previous_row()
+        elif event.key() == Qt.Key.Key_Right:
+            self.next_row()
 
     def esc(self):
         yesRating, noRating=nn.getRatingsRatio()
-        msgBox = QMessageBox(parent=self, text=f"So far there are {yesRating+noRating} elements with ratings. (1: {yesRating}, 0: {noRating})\nDo you want to stop rating?")
-        msgBox.setWindowTitle("Exit?")
-        msgBox.setIcon(QMessageBox.Icon.Question)
-        msgBox.setStandardButtons(QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
-        msgBox.setDefaultButton(QMessageBox.StandardButton.No)
-        answer = msgBox.exec()
-        if answer==QMessageBox.StandardButton.Yes:
-            nn.saveRatings(nn.filename)
-            stackedWidget.setCurrentIndex(4)
+        if yesRating+noRating<100:
+            msg_box = QMessageBox()
+            msg_box.setWindowTitle("Alert")
+            msg_box.setText(f"Minimum number of rated data is 300. So far you have {yesRating+noRating} elements (Liked: {yesRating}, Disliked: {noRating})")
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg_box.exec()
+        else:
+            msgBox = QMessageBox(parent=self, text=f"So far there are {yesRating+noRating} elements with ratings. (Liked: {yesRating}, Disliked: {noRating})\nDo you want to stop rating?")
+            msgBox.setWindowTitle("Exit?")
+            msgBox.setIcon(QMessageBox.Icon.Question)
+            msgBox.setStandardButtons(QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
+            msgBox.setDefaultButton(QMessageBox.StandardButton.No)
+            answer = msgBox.exec()
+            if answer==QMessageBox.StandardButton.Yes:
+                nn.saveRatings(nn.filename)
+                stackedWidget.setCurrentIndex(4)
         
 
 class NeuralNetworkWindow(QMainWindow):
@@ -251,16 +286,19 @@ class NeuralNetworkWindow(QMainWindow):
             self.ButtonLoadModel.clicked.connect(self.loadModel)
             self.ButtonSaveModel.clicked.connect(self.saveModel)
             self.ButtonTrain.clicked.connect(self.train)
+            self.ButtonGoToRecommendation.clicked.connect(self.recommend)
 
     def dataPreprocess(self):
         nn.preparation()
         nn.preprocess()
         nn.trainTestSplit(0.25)
         nn.normalizing()
+        print("type: ",nn.getTypeNumbers())
+        print("genres: ",nn.getGenreNumbers())
 
     def accuracy(self):
         nn.prediction()
-        self.labelAccuracy.setText(f"Model accuracy on test data: {str(nn.accuracy)}")
+        self.labelAccuracy.setText(f"Model accuracy on test data: {str(round(nn.accuracy,2))}")
 
     def loadModel(self):
         dialog=QFileDialog()
@@ -286,14 +324,49 @@ class NeuralNetworkWindow(QMainWindow):
         self.modelSaveDialog.show()
 
     def train(self):
+        self.ButtonTrain.setEnabled(False)
         nn.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
         nn.plotResult()
         self.accuracy()
-
-    def singlePredict(self):
-        pass
+        self.ButtonTrain.setEnabled(True)
 
     def recommend(self):
+        stackedWidget.setCurrentIndex(5)
+
+class RecommendationWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi("./UI/RecommendationWindow.ui", self)
+        self.showMaximized()
+        self.app=app
+        self.ButtonSinglePred.clicked.connect(self.singlePredict)
+        self.checkBoxMovies.stateChanged.connect(self.check)
+        self.checkBoxSeries.stateChanged.connect(self.check)
+    def showEvent(self, event):
+        self.check()
+        print('SHOW EVENT')
+
+    def check(self):
+        if nn.model!=None:
+            self.listWidget.clear()
+            if self.checkBoxMovies.isChecked() and self.checkBoxSeries.isChecked():
+                nn.massPredict(10,'all')
+                print('all')
+                self.listWidget.addItems(nn.top_movies)
+            elif self.checkBoxMovies.isChecked() and not self.checkBoxSeries.isChecked(): 
+                nn.massPredict(10,'movies')
+                print('movies')
+                self.listWidget.addItems(nn.top_movies)
+            elif not self.checkBoxMovies.isChecked() and self.checkBoxSeries.isChecked():
+                nn.massPredict(10,'series')
+                print('series')
+                self.listWidget.addItems(nn.top_movies)
+    
+    # def recommend(self):
+    #     if nn.model!=None:
+    #         nn.massPredict(10,'all')
+                
+    def singlePredict(self):
         pass
 
 class HelpWindow(QMainWindow):
@@ -334,12 +407,14 @@ loadWindow=LoadWindow()
 editRatingsWindow=EditRatingsWindow()
 helpWindow=HelpWindow()
 neuralnetworkWindow=NeuralNetworkWindow()
+recommendationWindow=RecommendationWindow()
 stackedWidget=QtWidgets.QStackedWidget()
 stackedWidget.addWidget(mainWindow)
 stackedWidget.addWidget(loadWindow)
 stackedWidget.addWidget(editRatingsWindow)
 stackedWidget.addWidget(helpWindow)
 stackedWidget.addWidget(neuralnetworkWindow)
+stackedWidget.addWidget(recommendationWindow)
 stackedWidget.setWindowIcon(QIcon('images/video.png'))
 stackedWidget.setWindowTitle("Neural network-based movie and TV series recommendation system")
 #stackedWidget.show()
