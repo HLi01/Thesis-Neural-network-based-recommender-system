@@ -6,8 +6,10 @@ import sys, time, shutil, requests
 import neural_network
 import pandas as pd
 import numpy as np
+from recommender import Recommender
 
 nn=neural_network.NeuralNetwork()
+rec=Recommender()
 excludeAlredyRated=False
 
 class MainWindow(QMainWindow):
@@ -57,10 +59,10 @@ class FileNameWindow(QDialog):
         self.ButtonOK.clicked.connect(self.OK)
     def OK(self):
         #print(self.lineEdit.text())
-        nn.filename=self.lineEdit.text()+'.tsv'
-        shutil.copy('base.tsv',nn.filename)
+        rec.filename=self.lineEdit.text()+'.tsv'
+        shutil.copy('base.tsv',rec.filename)
         self.close()
-        nn.loadFile(path=nn.filename)
+        rec.loadFile(path=rec.filename)
         stackedWidget.setCurrentIndex(2)
 
 class ModelSaveDialog(QDialog):
@@ -70,8 +72,8 @@ class ModelSaveDialog(QDialog):
         self.ButtonOK.clicked.connect(self.OK)
     def OK(self):
         #print(self.lineEdit.text())
-        nn.modelPath=self.lineEdit.text()+'.h5'
-        nn.saveModel()
+        rec.modelPath=self.lineEdit.text()+'.h5'
+        rec.saveModel()
         self.close()
         
 
@@ -119,10 +121,10 @@ class LoadWindow(QMainWindow):
             self.run()
             #print(type(self.selectedFile[0]))
             #df=pd.read_csv(self.selectedFile[0], sep='\t')
-            nn.filename=self.selectedFile[0].split("/")[-1]
+            rec.filename=self.selectedFile[0].split("/")[-1]
             #print(nn.filename)
-            nn.loadFile(path=self.selectedFile[0])
-            df=nn.wholeData
+            rec.loadFile(path=self.selectedFile[0])
+            df=rec.wholeData()
             #print(df.shape[0]," rows")
             #print(df[df['score'] > 0]['tconst'].count(), " ratings")
             self.labelFileName.setText(self.selectedFile[0])
@@ -184,23 +186,23 @@ class EditRatingsWindow(QMainWindow):
     #     print("Saját esemény érkezett!")
     #     self.update_label_text()
 
-    def event(self, event):
-        if event.type() == QEvent.Type.User:
-            # Hívjuk meg a saját esemény kezelőmet
-            self.handleCustomEvent(event)
-        return super().event(event)
+    # def event(self, event):
+    #     if event.type() == QEvent.Type.User:
+    #         # Hívjuk meg a saját esemény kezelőmet
+    #         self.handleCustomEvent(event)
+    #     return super().event(event)
 
     def update_label_text(self):
-        num_rows = len(nn.wholeData)
+        num_rows = len(rec.wholeData())
         if num_rows > 0:
             print(self.current_row)
-            row_data = nn.wholeData.iloc[self.current_row]
+            row_data = (rec.wholeData()).iloc[self.current_row]
             if excludeAlredyRated:
                 if row_data['score']== 0 or row_data['score']== 1:
                     self.next_row()
                 else: 
                     self.labelTitle.setText(f"({self.current_row+1}) {row_data['primaryTitle']}")
-                    print(row_data['primaryTitle'])
+                    #print(row_data['primaryTitle'])
                     self.labelDescription.setText(row_data['overview'])
                     url_image = row_data.loc['poster']
                     image = QImage()
@@ -221,22 +223,22 @@ class EditRatingsWindow(QMainWindow):
             self.update_label_text()
 
     def next_row(self):
-        if self.current_row < len(nn.wholeData) - 1:
+        if self.current_row < len(rec.wholeData()) - 1:
             self.current_row += 1
             self.update_label_text()
 
     def skip(self):
-        nn.skip(self.current_row)
+        rec.rate('l',self.current_row)
         #self.current_row+=1
         self.next_row()
 
     def disLike(self):
-        nn.disLike(self.current_row)
+        rec.rate('d',self.current_row)
         #self.current_row+=1
         self.next_row()
 
     def like(self):
-        nn.like(self.current_row)
+        rec.rate('s',self.current_row)
         #self.current_row+=1
         self.next_row()
     
@@ -256,7 +258,7 @@ class EditRatingsWindow(QMainWindow):
             self.next_row()
 
     def esc(self):
-        yesRating, noRating=nn.getRatingsRatio()
+        yesRating, noRating=rec.getRatingsRatio()
         if yesRating+noRating<100:
             msg_box = QMessageBox()
             msg_box.setWindowTitle("Alert")
@@ -272,7 +274,7 @@ class EditRatingsWindow(QMainWindow):
             msgBox.setDefaultButton(QMessageBox.StandardButton.No)
             answer = msgBox.exec()
             if answer==QMessageBox.StandardButton.Yes:
-                nn.saveRatings(nn.filename)
+                rec.saveRatings()
                 stackedWidget.setCurrentIndex(4)
         
 
@@ -289,16 +291,14 @@ class NeuralNetworkWindow(QMainWindow):
             self.ButtonGoToRecommendation.clicked.connect(self.recommend)
 
     def dataPreprocess(self):
-        nn.preparation()
-        nn.preprocess()
-        nn.trainTestSplit(0.25)
-        nn.normalizing()
-        print("type: ",nn.getTypeNumbers())
-        print("genres: ",nn.getGenreNumbers())
+        rec.dataProcess()
+        self.ButtonGoToRecommendation.setEnabled(True)
+        #print("type: ",nn.getTypeNumbers())
+        #print("genres: ",nn.getGenreNumbers())
 
     def accuracy(self):
-        nn.prediction()
-        self.labelAccuracy.setText(f"Model accuracy on test data: {str(round(nn.accuracy,2))}")
+        rec.prediction()
+        self.labelAccuracy.setText(f"Model accuracy on test data: {str(round(rec.accuracy(),2))}")
 
     def loadModel(self):
         dialog=QFileDialog()
@@ -309,14 +309,15 @@ class NeuralNetworkWindow(QMainWindow):
         self.selectedFile=dialog.selectedFiles()
         if(dialogSuccessful):
             self.dataPreprocess()
-            nn.loadModel(path=self.selectedFile[0])
-            nn.modelPath=self.selectedFile[0].split("/")[-1]
+            rec.loadModel(path=self.selectedFile[0])
+            rec.modelPath=self.selectedFile[0].split("/")[-1]
             self.accuracy()
 
     def makeModel(self):
         self.dataPreprocess()
+        self.ButtonSaveModel.setEnabled(True)
         
-        nn.buildModel()
+        rec.buildModel()
         self.ButtonTrain.setEnabled(True)
 
     def saveModel(self):
@@ -325,12 +326,13 @@ class NeuralNetworkWindow(QMainWindow):
 
     def train(self):
         self.ButtonTrain.setEnabled(False)
-        nn.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
-        nn.plotResult()
+        rec.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
+        rec.plotResult()
         self.accuracy()
         self.ButtonTrain.setEnabled(True)
 
     def recommend(self):
+        rec.massPredict()
         stackedWidget.setCurrentIndex(5)
 
 class RecommendationWindow(QMainWindow):
@@ -340,27 +342,78 @@ class RecommendationWindow(QMainWindow):
         self.showMaximized()
         self.app=app
         self.ButtonSinglePred.clicked.connect(self.singlePredict)
-        self.checkBoxMovies.stateChanged.connect(self.check)
-        self.checkBoxSeries.stateChanged.connect(self.check)
+        self.radioButtonAll.clicked.connect(self.AllRadio)
+        self.radioButtonMovies.clicked.connect(self.MovieRadio)
+        self.radioButtonSeries.clicked.connect(self.SeriesRadio)
+        self.horizontalSlider.valueChanged.connect(self.sliderValueChanged)
+        self.currentSliderValue=None
+
     def showEvent(self, event):
-        self.check()
+        self.AllRadio()
         print('SHOW EVENT')
 
-    def check(self):
-        if nn.model!=None:
+    def sliderValueChanged(self, value):
+        print('SLIDER VALUE CHANGED TO', value)
+        self.currentSliderValue=value
+        if self.radioButtonAll.isChecked():
+            self.AllRadio()
+        elif self.radioButtonMovies.isChecked():
+            self.MovieRadio()
+        elif self.radioButtonSeries.isChecked():
+            self.SeriesRadio()
+
+    def AllRadio(self):
+        if rec.model()!=None:
+            if self.currentSliderValue==None: 
+                self.currentSliderValue=1
+            print(self.currentSliderValue)
             self.listWidget.clear()
-            if self.checkBoxMovies.isChecked() and self.checkBoxSeries.isChecked():
-                nn.massPredict(10,'all')
-                print('all')
-                self.listWidget.addItems(nn.top_movies)
-            elif self.checkBoxMovies.isChecked() and not self.checkBoxSeries.isChecked(): 
-                nn.massPredict(10,'movies')
-                print('movies')
-                self.listWidget.addItems(nn.top_movies)
-            elif not self.checkBoxMovies.isChecked() and self.checkBoxSeries.isChecked():
-                nn.massPredict(10,'series')
-                print('series')
-                self.listWidget.addItems(nn.top_movies)
+            print('all')
+            rec.massRecommend(self.currentSliderValue*10,'all')
+            self.listWidget.addItems(rec.predictionOrderN)
+
+    def MovieRadio(self):
+        if rec.model()!=None:
+            if self.currentSliderValue==None: 
+                self.currentSliderValue=1
+            print(self.currentSliderValue)
+            self.listWidget.clear()
+            print('movies')
+            rec.massRecommend(self.currentSliderValue*10,'movies')
+            self.listWidget.addItems(rec.predictionOrderN)
+
+    def SeriesRadio(self):
+        if rec.model()!=None:
+            if self.currentSliderValue==None: 
+                self.currentSliderValue=1
+            print(self.currentSliderValue)
+            self.listWidget.clear()
+            print('series')
+            rec.massRecommend(self.currentSliderValue*10,'series')
+            self.listWidget.addItems(rec.predictionOrderN)
+
+    # def check(self):
+    #     if rec.model()!=None:
+    #         if self.currentSliderValue==None: 
+    #             self.currentSliderValue=1
+    #         print(self.currentSliderValue)
+    #         self.currentSliderValue=self.currentSliderValue*10
+    #         self.listWidget.clear()
+            
+
+            
+    #         if self.checkBoxMovies.isChecked() and self.checkBoxSeries.isChecked():
+    #             print('all')
+    #             rec.massRecommend(self.currentSliderValue,'all')
+    #             self.listWidget.addItems(rec.predictionOrderN)
+    #         elif self.checkBoxMovies.isChecked() and not self.checkBoxSeries.isChecked(): 
+    #             print('movies')
+    #             rec.massRecommend(self.currentSliderValue,'movies')
+    #             self.listWidget.addItems(rec.predictionOrderN)
+    #         elif not self.checkBoxMovies.isChecked() and self.checkBoxSeries.isChecked():
+    #             print('series')
+    #             rec.massRecommend(self.currentSliderValue,'series')
+    #             self.listWidget.addItems(rec.predictionOrderN)
     
     # def recommend(self):
     #     if nn.model!=None:

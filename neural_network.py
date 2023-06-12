@@ -27,9 +27,10 @@ class NeuralNetwork:
         self.trainResult=tf.keras.callbacks.History
         self.y_pred=None
         self.accuracy=None
-        self.filename=''
-        self.modelPath=''
-        self.top_movies=list()
+        
+        self.top_titles=list()
+        self.top_types=list()
+        self.top_predictions=list()
 
     @property
     def getDataset(self)->pd.DataFrame:
@@ -95,8 +96,8 @@ class NeuralNetwork:
         self.unratedXTypes=self.unratedData['titleType']
         features=self.unratedData.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
         self.unratedX=features.iloc[:,:-1]
-        print(self.unratedX['genres'].unique())
-        print(self.X['genres'].unique())
+        #print(self.unratedX['genres'].unique())
+        #print(self.X['genres'].unique())
 
     def deleteAllRatings(self):
         self.df.iloc[:,-1:]=np.nan
@@ -171,8 +172,8 @@ class NeuralNetwork:
         plt.show()
 
     def prediction(self):
-        print(self.X_train[0].shape)
-        print(self.X_test[0].shape)
+        #print(self.X_train[0].shape)
+        #print(self.X_test[0].shape)
         self.y_pred=self.model.predict(self.X_test)
         #print(self.y_pred[:5])
         #print(self.y_test[:5])
@@ -188,45 +189,48 @@ class NeuralNetwork:
     def singlePredict(self):
         pass
 
-    def massPredict(self, n, filter):
-        self.top_movies.clear()
+    def massPredict(self):
+        
         predicts=self.model.predict(self.unratedX)
         predicts.astype(float)
         predicts=np.array(predicts).flatten()
-        if filter=='movies':
-            top_indices=np.argsort(predicts)[::-1]
-            idx=0
-            for i in top_indices:
-                if idx<n:
-                    if self.unratedXTypes.iloc[i]=='movie':
-                        idx+=1
-                        print(idx, ' ', self.unratedXTitles.iloc[i])
-                        self.top_movies.append(self.unratedXTitles.iloc[i])    
-                else: 
-                    break
-            print(self.top_movies)
-        elif filter=='series':
-            top_indices=np.argsort(predicts)[::-1]
-            idx=0
-            for i in top_indices:
-                if idx<n:
-                    if self.unratedXTypes.iloc[i]=='tvSeries' or self.unratedXTypes.iloc[i]=='tvMiniSeries':
-                        idx+=1
-                        self.top_movies.append(self.unratedXTitles.iloc[i])    
-                else: 
-                    break
-            print(self.top_movies)
-        else: 
-            top_indices=np.argsort(predicts)[::-1][:n]
-            print(top_indices[:n])
-            self.top_movies = [self.unratedXTitles.iloc[i] for i in top_indices]
-            print(self.top_movies)
-    def mapping(self):
-        pass
+        top_indices=np.argsort(predicts)[::-1]
+        self.top_titles = [self.unratedXTitles.iloc[i] for i in top_indices]
+        self.top_types = [self.unratedXTypes.iloc[i] for i in top_indices]
+        self.top_predictions=(np.sort(predicts)[::-1]).tolist()
+        #print('nn masspredict', len(self.top_titles))
+        # if filter=='movies':
+        #     #top_indices=np.argsort(predicts)[::-1]
+        #     idx=0
+        #     for i in top_indices:
+        #         if idx<n:
+        #             if self.unratedXTypes.iloc[i]=='movie':
+        #                 idx+=1
+        #                 print(idx, ' ', self.unratedXTitles.iloc[i])
+        #                 self.top_movies.append(self.unratedXTitles.iloc[i])    
+        #         else: 
+        #             break
+        #     print(self.top_movies)
+        # elif filter=='series':
+        #     #top_indices=np.argsort(predicts)[::-1]
+        #     idx=0
+        #     for i in top_indices:
+        #         if idx<n:
+        #             if self.unratedXTypes.iloc[i]=='tvSeries' or self.unratedXTypes.iloc[i]=='tvMiniSeries':
+        #                 idx+=1
+        #                 self.top_movies.append(self.unratedXTitles.iloc[i])    
+        #         else: 
+        #             break
+        #     print(self.top_movies)
+        # else: 
+        #     #top_indices=np.argsort(predicts)[::-1][:n]
+        #     print(top_indices[:n])
+        #     self.top_movies = [self.unratedXTitles.iloc[i] for i in top_indices]
+        #     print(self.top_movies)
 
-    def saveModel(self):
+    def saveModel(self, path: str):
         #self.model.save("model_binary"+str(self.accuracy)[2:4]+".h5")
-        self.model.save(self.modelPath)
+        self.model.save(path)
 
     def loadModel(self, path: str):
         self.model = tf.keras.models.load_model(path)
