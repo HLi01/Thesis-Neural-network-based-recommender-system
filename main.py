@@ -1,9 +1,13 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QDialog, QFileDialog, QMessageBox, QTableWidgetItem
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QDialog, QFileDialog, QMessageBox, QTableWidgetItem
 from PyQt6.QtGui import QIcon, QPixmap, QImage, QColor
 from PyQt6.QtCore import Qt, QBasicTimer
 from PyQt6 import uic, QtWidgets
 import sys, time, shutil, requests
 import neural_network
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
 from recommender import Recommender
 from MovieSeries import MovieSeries
 
@@ -95,13 +99,13 @@ class LoadWindow(QMainWindow):
         if self.step==100:
             self.progressBar.setVisible(False)
 
-    def doAction(self):
-        if self.timer.isActive():
-            self.timer.stop()
-            self.btn.setText('Start')
-        else:
-            self.timer.start(100, self)
-            self.btn.setText('Stop')
+    # def doAction(self):
+    #     if self.timer.isActive():
+    #         self.timer.stop()
+    #         #self.btn.setText('Start')
+    #     else:
+    #         self.timer.start(100, self)
+    #         #self.btn.setText('Stop')
 
     def loadDataset(self):
         dialog=QFileDialog()
@@ -263,6 +267,8 @@ class NeuralNetworkWindow(QMainWindow):
             self.ButtonLoadModel.clicked.connect(self.loadModel)
             self.ButtonSaveModel.clicked.connect(self.saveModel)
             self.ButtonTrain.clicked.connect(self.train)
+            
+            #self.progressBar.setVisible(False)
             self.ButtonGoToRecommendation.clicked.connect(self.recommend)
 
     def dataPreprocess(self):
@@ -299,12 +305,23 @@ class NeuralNetworkWindow(QMainWindow):
         self.modelSaveDialog=ModelSaveDialog()
         self.modelSaveDialog.show()
 
+    # def plot(self):
+    #     fig=rec.plotResult()
+    #     canvas = FigureCanvas(fig)
+    #     toolbar = NavigationToolbar(canvas, self)
+    #     self.verticalLayoutCanvas.addWidget(toolbar)
+    #     self.verticalLayoutCanvas.addWidget(canvas)
+    #     canvas.draw()
+
+
     def train(self):
         self.ButtonTrain.setEnabled(False)
+        #self.progressBar.setVisible(True)
+        #self.run()
         rec.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
+        #self.plot()
         rec.plotResult()
         self.accuracy()
-        self.ButtonTrain.setEnabled(True)
 
     def recommend(self):
         rec.massPredict()

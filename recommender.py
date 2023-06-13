@@ -36,8 +36,8 @@ class Recommender:
     def buildModel(self):
         self.nn.buildModel()
 
-    def trainModel(self):
-        self.nn.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
+    def trainModel(self, batchSize, epochNum, valSplit, shuffle):
+        self.nn.trainModel(batchSize=batchSize, epochNum=epochNum, valSplit=valSplit, shuffle=shuffle)
 
     def plotResult(self):
         self.nn.plotResult()

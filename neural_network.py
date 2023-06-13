@@ -5,9 +5,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import category_encoders as ce
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.compose import ColumnTransformer
 from keras.layers.core import Dropout
 from keras.callbacks import EarlyStopping
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -27,7 +25,6 @@ class NeuralNetwork:
         self.trainResult=tf.keras.callbacks.History
         self.y_pred=None
         self.accuracy=None
-        
         self.top_titles=list()
         self.top_types=list()
         self.top_predictions=list()
@@ -101,9 +98,6 @@ class NeuralNetwork:
 
     def deleteAllRatings(self):
         self.df.iloc[:,-1:]=np.nan
-    
-    # def setRating(self, id:str, rating: int):
-    #     self.df.loc[self.df['tconst']==id, ['score']] = rating
 
     def deleteRowsWithoutScore(self):
         self.df=self.wholeData.dropna(subset=['score'], inplace=False)
@@ -127,15 +121,11 @@ class NeuralNetwork:
         self.binEncoderGenres.fit(self.X)
         self.X=self.binEncoderGenres.transform(self.X)
         self.unratedX=self.binEncoderGenres.transform(self.unratedX)
-        #print(len(self.unratedX['genres'].unique()))
-        #print(self.X['genres'].unique())
     
     def singlePreprocess(self, singleObject):
         singleObject.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=True)
         singleObject = self.binEncoderTitle.transform(singleObject)
         
-        # binEncoderGenres=ce.BinaryEncoder(cols=['genres'])
-        # binEncoderGenres.fit(self.X)
         singleObject=self.binEncoderGenres.transform(singleObject)
         return singleObject
 
@@ -148,18 +138,14 @@ class NeuralNetwork:
         self.scaler = MinMaxScaler().fit(self.X_train)
         self.X_train=self.scaler.transform(self.X_train)
         self.X_test=self.scaler.transform(self.X_test)
-        #print(self.X)
-        #print(self.unratedX)
         self.unratedX=self.scaler.transform(self.unratedX)
 
     def singleNormalizing(self, singleObject):
-        #scaler = MinMaxScaler().fit(self.X_train)
         singleObject=self.scaler.transform(singleObject)
         return singleObject
 
     def buildModel(self):
         input_params = self.X_train.shape[1]
-        #print(self.X_train[10])
         self.model=tf.keras.models.Sequential()
         self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
         self.model.add(Dropout(0.5))
@@ -175,6 +161,7 @@ class NeuralNetwork:
         self.trainResult=self.model.fit(self.X_train, self.y_train, batch_size=batchSize, epochs=epochNum, validation_split=valSplit, shuffle=shuffle, verbose=0)
 
     def plotResult(self):
+        fig, ax = plt.subplots()
         plt.plot(self.trainResult.history['accuracy'], label="train accuracy")
         plt.plot(self.trainResult.history['loss'], label="train loss")
         plt.plot(self.trainResult.history['val_loss'], label="validation loss")
@@ -184,6 +171,7 @@ class NeuralNetwork:
         plt.xlabel('epoch')
         plt.legend()
         plt.show()
+        #return fig
 
     def prediction(self):
         #print(self.X_train[0].shape)
@@ -216,35 +204,6 @@ class NeuralNetwork:
         self.top_titles = [self.unratedXTitles.iloc[i] for i in top_indices]
         self.top_types = [self.unratedXTypes.iloc[i] for i in top_indices]
         self.top_predictions=(np.sort(predicts)[::-1]).tolist()
-        #print('nn masspredict', len(self.top_titles))
-        # if filter=='movies':
-        #     #top_indices=np.argsort(predicts)[::-1]
-        #     idx=0
-        #     for i in top_indices:
-        #         if idx<n:
-        #             if self.unratedXTypes.iloc[i]=='movie':
-        #                 idx+=1
-        #                 print(idx, ' ', self.unratedXTitles.iloc[i])
-        #                 self.top_movies.append(self.unratedXTitles.iloc[i])    
-        #         else: 
-        #             break
-        #     print(self.top_movies)
-        # elif filter=='series':
-        #     #top_indices=np.argsort(predicts)[::-1]
-        #     idx=0
-        #     for i in top_indices:
-        #         if idx<n:
-        #             if self.unratedXTypes.iloc[i]=='tvSeries' or self.unratedXTypes.iloc[i]=='tvMiniSeries':
-        #                 idx+=1
-        #                 self.top_movies.append(self.unratedXTitles.iloc[i])    
-        #         else: 
-        #             break
-        #     print(self.top_movies)
-        # else: 
-        #     #top_indices=np.argsort(predicts)[::-1][:n]
-        #     print(top_indices[:n])
-        #     self.top_movies = [self.unratedXTitles.iloc[i] for i in top_indices]
-        #     print(self.top_movies)
 
     def saveModel(self, path: str):
         #self.model.save("model_binary"+str(self.accuracy)[2:4]+".h5")
