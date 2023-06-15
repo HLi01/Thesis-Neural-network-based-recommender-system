@@ -207,7 +207,7 @@ class EditRatingsWindow(QMainWindow):
             self.update_label_text()
 
     def skip(self):
-        rec.rate('l',self.current_row)
+        rec.rate('s',self.current_row)
         #self.current_row+=1
         self.next_row()
 
@@ -217,7 +217,7 @@ class EditRatingsWindow(QMainWindow):
         self.next_row()
 
     def like(self):
-        rec.rate('s',self.current_row)
+        rec.rate('l',self.current_row)
         #self.current_row+=1
         self.next_row()
     
