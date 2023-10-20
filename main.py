@@ -439,6 +439,8 @@ class FileNameWindow(QDialog):
         super().__init__()
         uic.loadUi("./UI/FilenameWindow.ui", self)
         self.ButtonOK.clicked.connect(self.OK)
+        self.lineEdit.textChanged.connect(self.check_text)
+        self.labelWarning.hide()
     def OK(self):
         global moviesOrSeries
         rec.filename=self.lineEdit.text()+'.tsv'
@@ -448,6 +450,16 @@ class FileNameWindow(QDialog):
             shutil.copy('movies.tsv',rec.filename)
         self.close()
         rec.loadFile(path=rec.filename)
+    
+    def check_text(self):
+        if self.lineEdit.text() == "base" or self.lineEdit.text() == "movies" or self.lineEdit.text() == "series":
+            self.labelWarning.show()
+            self.labelWarning.setText("Invalid name!")
+            self.ButtonOK.setEnabled(False)
+        else:
+            self.labelWarning.hide()
+            self.ButtonOK.setEnabled(True)
+    
 
 class ModelSaveDialog(QDialog):
     def __init__(self):
