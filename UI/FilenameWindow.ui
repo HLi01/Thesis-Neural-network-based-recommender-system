@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>326</width>
+    <width>338</width>
     <height>204</height>
    </rect>
   </property>
@@ -14,9 +14,24 @@
    <string>File name</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(189, 205, 214);</string>
+   <string notr="true">background-color: rgb(240, 235, 227);</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>15</number>
+   </property>
+   <property name="leftMargin">
+    <number>30</number>
+   </property>
+   <property name="topMargin">
+    <number>30</number>
+   </property>
+   <property name="rightMargin">
+    <number>30</number>
+   </property>
+   <property name="bottomMargin">
+    <number>30</number>
+   </property>
    <item>
     <widget class="QLabel" name="label">
      <property name="font">
@@ -46,8 +61,8 @@
       </font>
      </property>
      <property name="styleSheet">
-      <string notr="true">background-color: rgb(243, 222, 186);
-border-radius: 10px;</string>
+      <string notr="true">background-color: rgb(192, 161, 137);
+border-radius: 7px;</string>
      </property>
      <property name="text">
       <string>OK</string>

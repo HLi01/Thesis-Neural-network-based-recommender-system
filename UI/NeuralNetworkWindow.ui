@@ -21,41 +21,41 @@
    <string notr="true">background-color: rgb(189, 205, 214);</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout" columnstretch="1,2">
+   <layout class="QGridLayout" name="gridLayout" columnstretch="1,1" columnminimumwidth="2,1">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetDefaultConstraint</enum>
+    </property>
     <property name="leftMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="topMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="rightMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="bottomMargin">
-     <number>20</number>
+     <number>30</number>
     </property>
     <property name="horizontalSpacing">
-     <number>50</number>
+     <number>30</number>
     </property>
-    <item row="0" column="1">
-     <widget class="QListWidget" name="listWidget"/>
-    </item>
     <item row="0" column="0">
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="spacing">
-       <number>20</number>
+       <number>50</number>
       </property>
       <property name="leftMargin">
-       <number>20</number>
+       <number>50</number>
       </property>
       <property name="topMargin">
-       <number>20</number>
+       <number>50</number>
       </property>
       <property name="rightMargin">
-       <number>20</number>
+       <number>50</number>
       </property>
       <property name="bottomMargin">
-       <number>20</number>
+       <number>50</number>
       </property>
       <item>
        <widget class="QPushButton" name="ButtonLoadModel">
@@ -176,7 +176,8 @@ border-radius: 20px;</string>
          </font>
         </property>
         <property name="styleSheet">
-         <string notr="true">background-color: rgb(255, 255, 255);</string>
+         <string notr="true">background-color: rgb(255, 255, 255);
+padding: 5px;</string>
         </property>
         <property name="text">
          <string/>
@@ -218,6 +219,28 @@ border-radius: 20px;</string>
         </property>
        </widget>
       </item>
+     </layout>
+    </item>
+    <item row="0" column="1">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>20</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetMaximumSize</enum>
+      </property>
+      <property name="leftMargin">
+       <number>50</number>
+      </property>
+      <property name="topMargin">
+       <number>50</number>
+      </property>
+      <property name="rightMargin">
+       <number>50</number>
+      </property>
+      <property name="bottomMargin">
+       <number>50</number>
+      </property>
      </layout>
     </item>
    </layout>

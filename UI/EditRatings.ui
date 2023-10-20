@@ -94,6 +94,18 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>100</height>
+             </size>
+            </property>
             <property name="styleSheet">
              <string notr="true">border: 0px;</string>
             </property>
@@ -102,7 +114,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>C:/Users/Lili/.designer/images/Red_X.svg.png</normaloff>C:/Users/Lili/.designer/images/Red_X.svg.png</iconset>
+              <normaloff>../images/Red_X.svg.png</normaloff>../images/Red_X.svg.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -188,6 +200,18 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="minimumSize">
+           <size>
+            <width>300</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>400</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="font">
            <font>
             <family>Rockwell</family>
@@ -213,6 +237,18 @@ border-radius: 20px;</string>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>100</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>100</height>
+             </size>
+            </property>
             <property name="styleSheet">
              <string notr="true">border: 0px;</string>
             </property>
@@ -221,7 +257,7 @@ border-radius: 20px;</string>
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>C:/Users/Lili/.designer/images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</normaloff>C:/Users/Lili/.designer/images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</iconset>
+              <normaloff>../images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</normaloff>../images/png-clipart-heart-green-graphy-hearts-love-blue-thumbnail.png</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -295,17 +331,6 @@ border-radius: 20px;</string>
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1980</width>
-     <height>21</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>
