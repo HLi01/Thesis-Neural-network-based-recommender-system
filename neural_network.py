@@ -43,7 +43,7 @@ class NeuralNetwork:
         
     #@staticmethod 
     def loadFile(self, path:str):
-        self.wholeData = pd.read_csv(path, sep='\t', header=0, quoting=3)
+        self.wholeData = pd.read_csv(path, sep='\t', header=0)
         self.wholeData=self.wholeData.sort_values(by = 'numVotes', ascending=False)
 
     def like(self, row: int):
@@ -84,14 +84,14 @@ class NeuralNetwork:
         # if genreNumbers<21:
         #     for i in range(0,3-genreNumbers):
         self.deleteRowsWithoutScore()
-        features=self.df.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
+        features=self.df.drop(['tconst', 'overview', 'poster'],axis=1, inplace=False)
         self.X,self.y = features.iloc[:,:-1], features.iloc[:,-1]
         #features.iloc[:,:-1],features.iloc[:,-1]
         #print(self.y)
         self.getRowsWithoutScore()
         self.unratedXTitles=self.unratedData['primaryTitle']
-        self.unratedXTypes=self.unratedData['titleType']
-        features=self.unratedData.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=False)
+        #self.unratedXTypes=self.unratedData['titleType']
+        features=self.unratedData.drop(['tconst', 'primaryTitle', 'overview', 'poster'],axis=1, inplace=False)
         self.unratedX=features.iloc[:,:-1]
         #print(self.unratedX['genres'].unique())
         #print(self.X['genres'].unique())
@@ -112,21 +112,22 @@ class NeuralNetwork:
 
     def preprocess(self):
         #preprocessing - binary encoding (titleType)
-        self.binEncoderTitle=ce.BinaryEncoder(cols=['titleType'])
-        self.binEncoderTitle.fit(self.X)
-        self.X = self.binEncoderTitle.transform(self.X)
-        self.unratedX = self.binEncoderTitle.transform(self.unratedX)
-        #preprocessing - binary encoding (genres)
-        self.binEncoderGenres=ce.BinaryEncoder(cols=['genres'])
-        self.binEncoderGenres.fit(self.X)
-        self.X=self.binEncoderGenres.transform(self.X)
-        self.unratedX=self.binEncoderGenres.transform(self.unratedX)
+        # self.binEncoderTitle=ce.BinaryEncoder(cols=['titleType'])
+        # self.binEncoderTitle.fit(self.X)
+        # self.X = self.binEncoderTitle.transform(self.X)
+        # self.unratedX = self.binEncoderTitle.transform(self.unratedX)
+        # #preprocessing - binary encoding (genres)
+        # self.binEncoderGenres=ce.BinaryEncoder(cols=['genres'])
+        # self.binEncoderGenres.fit(self.X)
+        # self.X=self.binEncoderGenres.transform(self.X)
+        # self.unratedX=self.binEncoderGenres.transform(self.unratedX)
+        pass
     
     def singlePreprocess(self, singleObject):
-        singleObject.drop(['tconst', 'primaryTitle', 'tmdbId', 'overview', 'poster'],axis=1, inplace=True)
-        singleObject = self.binEncoderTitle.transform(singleObject)
+        singleObject.drop(['tconst', 'primaryTitle', 'overview', 'poster'],axis=1, inplace=True)
+        # singleObject = self.binEncoderTitle.transform(singleObject)
         
-        singleObject=self.binEncoderGenres.transform(singleObject)
+        # singleObject=self.binEncoderGenres.transform(singleObject)
         return singleObject
 
     def trainTestSplit(self, test_size):
@@ -196,7 +197,6 @@ class NeuralNetwork:
         return self.singlePrediction
 
     def massPredict(self):
-        
         predicts=self.model.predict(self.unratedX)
         predicts.astype(float)
         predicts=np.array(predicts).flatten()

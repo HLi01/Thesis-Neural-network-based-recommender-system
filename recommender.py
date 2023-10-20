@@ -96,14 +96,14 @@ class Recommender:
         movie_dict = {
                 'tconst': movieObj.tconst,
                 'primaryTitle': movieObj.primaryTitle,
-                'titleType': movieObj.titleType,
+                # 'titleType': movieObj.titleType,
                 'overview': movieObj.overview,
                 'startYear': movieObj.startYear,
                 'runtimeMinutes': movieObj.runtimeMinutes,
                 'genres': movieObj.genre,
                 'averageRating': movieObj.averageRating,
                 'numVotes': movieObj.numVotes,
-                'tmdbId': movieObj.tmdbId,
+                # 'tmdbId': movieObj.tmdbId,
                 'tmdbVoteAvg': movieObj.tmdbVoteAvg,
                 'poster': movieObj.poster
             }       
