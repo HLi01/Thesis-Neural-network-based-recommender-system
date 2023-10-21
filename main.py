@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QDialog, QFileDialog, QMessageBox, QTableWidgetItem, QFrame
-from PyQt6.QtGui import QIcon, QPixmap, QImage, QColor
-from PyQt6.QtCore import Qt, QBasicTimer
+from PyQt6.QtGui import QIcon, QPixmap, QImage, QColor, QMovie
+from PyQt6.QtCore import Qt, QBasicTimer, QThread, pyqtSignal, QTimer
 from PyQt6 import uic, QtWidgets
 import sys, time, shutil, requests
 import neural_network
@@ -44,16 +44,10 @@ class MainWindow(QMainWindow):
         self.ButtonExistingSeriesDataset.clicked.connect(self.existingSeriesDataset)
         self.ButtonExistingMovieDataset.clicked.connect(self.existingMovieDataset)
         self.ButtonSinglePred.clicked.connect(self.singlePredict)
-        self.radioButtonAll.clicked.connect(self.AllRadio)
-        self.radioButtonMovies.clicked.connect(self.MovieRadio)
-        self.radioButtonSeries.clicked.connect(self.SeriesRadio)
         self.horizontalSlider.valueChanged.connect(self.sliderValueChanged)
         self.currentSliderValue=None
-        self.comboBox_type.addItems(['movie','tvSeries','tvMiniSeries'])
         self.comboBox_genre.addItems(['Action','Crime','Horror','Comedy','Drama','Animation','Biography','Adventure','Western','Fantasy','Romance','Sci-Fi','Mystery','Family','Documentary','Game-Show'])
-        self.comboBox_type.setCurrentIndex(0)
         self.comboBox_genre.setCurrentIndex(0)
-        self.comboBox_type.currentIndexChanged.connect(self.handleComboBoxTypeChange)
         self.comboBox_genre.currentIndexChanged.connect(self.handleComboBoxGenreChange)
         self.lineEdit_tconst.textChanged.connect(self.handleLineEdit_tconst)
         self.lineEdit_title.textChanged.connect(self.handlelineEdit_title)
@@ -62,11 +56,11 @@ class MainWindow(QMainWindow):
         self.lineEdit_runtime.textChanged.connect(self.handlelineEdit_runtime)
         self.lineEdit_avgratingimdb.textChanged.connect(self.handlelineEdit_avgratingimdb)
         self.lineEdit_numvotes.textChanged.connect(self.handlelineEdit_numvotes)
-        self.lineEdit_tmdbId.textChanged.connect(self.handlelineEdit_tmdbId)
         self.lineEdit_tmdbvoteavg.textChanged.connect(self.handlelineEdit_tmdbvoteavg)
         self.lineEdit_poster.textChanged.connect(self.handleLinelineEdit_poster)
         self.moviesAndSeries=MovieSeries()
         self.ButtonHelp.clicked.connect(lambda: self.stackedWidget.setCurrentWidget(self.page_help))
+        #self.labelGif.hide()
         self.labelInstruction.setText(''' 
         Using this application, you can effectively use the Neural network-based movie and TV series recommendation system to provide personalized recommendations based on your preferences and the dataset's information.
         If you want to start with a new dataset, you can create one by collecting data on movies and TV series, including user ratings, genres, actors, and other relevant features. This base dataset contains more than 23000 films and series, you can add new elements to this list. 
@@ -77,6 +71,8 @@ class MainWindow(QMainWindow):
         To reuse the trained model later without retraining, save it. This way, you can load the model whenever you need to make predictions or generate recommendations.
         When you want to use the recommendation system again, load the previously saved model into memory. This step ensures that you can quickly access the trained model without the need for time-consuming training.
         ''')
+        self.currentId=''
+        self.training_thread = None
         
     
     def closeEvent(self, event):
@@ -87,6 +83,16 @@ class MainWindow(QMainWindow):
         msgBox.setDefaultButton(QMessageBox.StandardButton.No)
         answer = msgBox.exec()
         if answer==QMessageBox.StandardButton.Yes:
+            try:
+                rec.saveRatings()
+            except FileNotFoundError:
+                print("No file!")
+            try:
+                if self.training_thread and self.training_thread.isRunning():
+                    self.training_thread.quit()
+                    self.training_thread.wait()
+            except RuntimeError as e:
+                print(f"Error occurred: {e}")
             self.app.quit()
         else:
             event.ignore()
@@ -183,9 +189,10 @@ class MainWindow(QMainWindow):
         if num_rows > 0:
             print(self.current_row)
             row_data = (rec.wholeData()).iloc[self.current_row]
-            print(row_data)
+            self.currentId=row_data['tconst']
+            print(self.currentId)
             if excludeAlredyRated:
-                if row_data['score']== 0 or row_data['score']== 1:
+                if row_data['score']==0 or row_data['score']==1:
                     self.next_row()
                 else: 
                     self.labelTitle.setText(f"({self.current_row+1}) {row_data['primaryTitle']}")
@@ -204,14 +211,13 @@ class MainWindow(QMainWindow):
                 self.labelLength.setText(str(row_data['runtimeMinutes']))
                 self.labelDescription.setText(row_data['overview'])
                 url_image = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2/{row_data.loc['poster']}"
-                print(url_image)
+                #print(url_image)
                 image = QImage()
                 image.loadFromData(requests.get(url_image).content)
                 self.labelPicture.setPixmap(QPixmap(image))
                 
     def getGenres(self, row_data):
         return [genre for genre, value in row_data.items() if value == 1 and genre not in ['runtimeMinutes', 'averageRating', 'numVotes', 'tmdbVoteAvg', 'score']]
-
 
     def previous_row(self):
         if self.current_row > 0:
@@ -224,17 +230,17 @@ class MainWindow(QMainWindow):
             self.update_label_text()
 
     def skip(self):
-        rec.rate('s',self.current_row)
+        rec.rate('s',self.currentId)
         #self.current_row+=1
         self.next_row()
 
     def disLike(self):
-        rec.rate('d',self.current_row)
+        rec.rate('d',self.currentId)
         #self.current_row+=1
         self.next_row()
 
     def like(self):
-        rec.rate('l',self.current_row)
+        rec.rate('l',self.currentId)
         #self.current_row+=1
         self.next_row()
     
@@ -282,7 +288,7 @@ class MainWindow(QMainWindow):
 
     def accuracy(self):
         rec.prediction()
-        self.labelAccuracy.setText(f"Model accuracy on test data: {str(round(rec.accuracy(),2))}")
+        self.label_accuracy.setText(f"Model accuracy on test data: {str(round(rec.accuracy(),2))}")
 
     def loadModel(self):
         dialog=QFileDialog()
@@ -316,15 +322,34 @@ class MainWindow(QMainWindow):
     #     self.verticalLayoutCanvas.addWidget(canvas)
     #     canvas.draw()
 
-
     def train(self):
         self.ButtonTrain.setEnabled(False)
-        #self.progressBar.setVisible(True)
-        #self.run()
-        rec.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
-        #self.plot()
+        movie=QMovie('images/duck.gif')
+        self.labelGif.setMovie(movie)
+        movie.start()
+        self.labelGif.show()
+        
+        # Start the training in a separate thread
+        self.training_thread = TrainingThread()
+        self.training_thread.training_finished.connect(self.training_finished)
+        self.training_thread.finished.connect(self.training_thread.deleteLater)  # Ensure the thread is deleted properly
+        QTimer.singleShot(0, self.training_thread.start)
+
+        # rec.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
+        # rec.plotResult()
+
+    def training_finished(self):
+        # Once the training is complete, stop the gif and perform other operations
+        self.labelGif.setMovie(None)
+        self.labelGif.setPixmap(QPixmap())
         rec.plotResult()
         self.accuracy()
+    
+    # def closeEvent(self, event):
+    #     if self.training_thread is not None:
+    #         self.training_thread.quit()
+    #         #self.training_thread.wait()
+    #     event.accept()
 
     def recommend(self):
         rec.massPredict()
@@ -369,48 +394,48 @@ class MainWindow(QMainWindow):
         self.moviesAndSeries.genre=self.comboBox_genre.currentText()
 
     def showEvent(self, event):
-        self.AllRadio()
+        #self.AllRadio()
         print('SHOW EVENT')
 
     def sliderValueChanged(self, value):
         print('SLIDER VALUE CHANGED TO', value)
         self.currentSliderValue=value
-        if self.radioButtonAll.isChecked():
-            self.AllRadio()
-        elif self.radioButtonMovies.isChecked():
-            self.MovieRadio()
-        elif self.radioButtonSeries.isChecked():
-            self.SeriesRadio()
+        # if self.radioButtonAll.isChecked():
+        #     self.AllRadio()
+        # elif self.radioButtonMovies.isChecked():
+        #     self.MovieRadio()
+        # elif self.radioButtonSeries.isChecked():
+        #     self.SeriesRadio()
 
-    def AllRadio(self):
-        if rec.model()!=None:
-            if self.currentSliderValue==None: 
-                self.currentSliderValue=1
-            print(self.currentSliderValue)
-            self.listWidget.clear()
-            print('all')
-            rec.massRecommend(self.currentSliderValue*10,'all')
-            self.listWidget.addItems(rec.predictionOrderN)
+    # def AllRadio(self):
+    #     if rec.model()!=None:
+    #         if self.currentSliderValue==None: 
+    #             self.currentSliderValue=1
+    #         print(self.currentSliderValue)
+    #         self.listWidget.clear()
+    #         print('all')
+    #         rec.massRecommend(self.currentSliderValue*10,'all')
+    #         self.listWidget.addItems(rec.predictionOrderN)
 
-    def MovieRadio(self):
-        if rec.model()!=None:
-            if self.currentSliderValue==None: 
-                self.currentSliderValue=1
-            print(self.currentSliderValue)
-            self.listWidget.clear()
-            print('movies')
-            rec.massRecommend(self.currentSliderValue*10,'movies')
-            self.listWidget.addItems(rec.predictionOrderN)
+    # def MovieRadio(self):
+    #     if rec.model()!=None:
+    #         if self.currentSliderValue==None: 
+    #             self.currentSliderValue=1
+    #         print(self.currentSliderValue)
+    #         self.listWidget.clear()
+    #         print('movies')
+    #         rec.massRecommend(self.currentSliderValue*10,'movies')
+    #         self.listWidget.addItems(rec.predictionOrderN)
 
-    def SeriesRadio(self):
-        if rec.model()!=None:
-            if self.currentSliderValue==None: 
-                self.currentSliderValue=1
-            print(self.currentSliderValue)
-            self.listWidget.clear()
-            print('series')
-            rec.massRecommend(self.currentSliderValue*10,'series')
-            self.listWidget.addItems(rec.predictionOrderN)
+    # def SeriesRadio(self):
+    #     if rec.model()!=None:
+    #         if self.currentSliderValue==None: 
+    #             self.currentSliderValue=1
+    #         print(self.currentSliderValue)
+    #         self.listWidget.clear()
+    #         print('series')
+    #         rec.massRecommend(self.currentSliderValue*10,'series')
+    #         self.listWidget.addItems(rec.predictionOrderN)
 
     def clear(self):
         self.lineEdit_tconst.clear()
@@ -423,7 +448,6 @@ class MainWindow(QMainWindow):
         self.lineEdit_tmdbId.clear()
         self.lineEdit_tmdbvoteavg.clear()
         self.lineEdit_poster.clear()
-        self.comboBox_type.setCurrentIndex(0)
         self.comboBox_genre.setCurrentIndex(0)
 
     def singlePredict(self):
@@ -470,6 +494,13 @@ class ModelSaveDialog(QDialog):
         rec.modelPath=self.lineEdit.text()+'.h5'
         rec.saveModel()
         self.close()
+
+class TrainingThread(QThread):
+    training_finished = pyqtSignal()
+
+    def run(self):
+        rec.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
+        self.training_finished.emit()
 
 # class RecommendationWindow(QMainWindow):
 #     def __init__(self):
