@@ -44,6 +44,11 @@ class MainWindow(QMainWindow):
         self.ButtonExistingSeriesDataset.clicked.connect(self.existingSeriesDataset)
         self.ButtonExistingMovieDataset.clicked.connect(self.existingMovieDataset)
         self.ButtonSinglePred.clicked.connect(self.singlePredict)
+        self.ButtonSearchMovies.clicked.connect(self.searchPage)
+        self.ButtonSearchSeries.clicked.connect(self.searchPage)
+        self.pushButtonSearch.clicked.connect(self.search)
+        self.ButtonSearchMovies.setVisible(False)
+        self.ButtonSearchSeries.setVisible(False)
         self.horizontalSlider.valueChanged.connect(self.sliderValueChanged)
         self.currentSliderValue=None
         self.comboBox_genre.addItems(['Action','Crime','Horror','Comedy','Drama','Animation','Biography','Adventure','Western','Fantasy','Romance','Sci-Fi','Mystery','Family','Documentary','Game-Show'])
@@ -73,8 +78,36 @@ class MainWindow(QMainWindow):
         ''')
         self.currentId=''
         self.training_thread = None
+        self.stackedWidget.setCurrentWidget(self.page_home)
         
+    def searchPage(self):
+        self.stackedWidget.setCurrentWidget(self.page_search)
     
+    def search(self):
+        title_to_search=self.lineEditSearch.text()
+        if rec.wholeData().loc[rec.wholeData()['primaryTitle'] == title_to_search].shape[0] > 0:
+            print("Movie found!")
+            row=(rec.wholeData()).loc[(rec.wholeData())['primaryTitle'] == title_to_search]
+            self.labelTitleYear.setText(f"{row['primaryTitle']} ({row['startYear']})")
+            print(row)
+            url_image = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2/{row['poster']}"
+            image = QImage()
+            image.loadFromData(requests.get(url_image).content)
+            self.labelPic.setPixmap(QPixmap(image))
+
+        else:
+            global moviesOrSeries
+            print("Movie not found!")
+            error_box = QMessageBox()
+            if moviesOrSeries:
+                error_box.setText("Series not found!")
+            else:
+                error_box.setText("Movie not found!")
+            error_box.setWindowTitle("Error")
+            error_box.setIcon(QMessageBox.Icon.Critical)
+            error_box.exec()
+
+
     def closeEvent(self, event):
         msgBox = QMessageBox(parent=self, text="Do you want to exit the application?")
         msgBox.setWindowTitle("Exit?")
@@ -114,6 +147,7 @@ class MainWindow(QMainWindow):
         moviesOrSeries=False
         self.filenameWindow=FileNameWindow()
         self.filenameWindow.show()
+        self.ButtonSearchMovies.setVisible(True)
         self.stackedWidget.setCurrentWidget(self.page_rater)
         self.current_row=0
 
@@ -122,6 +156,7 @@ class MainWindow(QMainWindow):
         moviesOrSeries=True
         self.filenameWindow=FileNameWindow()
         self.filenameWindow.show()
+        self.ButtonSearchSeries.setVisible(True)
         self.stackedWidget.setCurrentWidget(self.page_rater)
         self.current_row=0
 
@@ -136,6 +171,7 @@ class MainWindow(QMainWindow):
             self.progressBar.setVisible(False)
 
     def loadDataset(self):
+        global moviesOrSeries
         dialog=QFileDialog()
         dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         dialog.setNameFilter("TSV Files (*.tsv);;All Files (*)")
@@ -147,6 +183,13 @@ class MainWindow(QMainWindow):
             rec.filename=self.selectedFile[0].split("/")[-1]
             rec.loadFile(path=self.selectedFile[0])
             df=rec.wholeData()
+            if moviesOrSeries:
+                self.ButtonSearchSeries.setVisible(True)
+            else:
+                self.ButtonSearchMovies.setVisible(True)
+            self.tableWidget.setStyleSheet(
+                "border: 1px solid black;"
+            )
             self.labelFileName.setText(self.selectedFile[0])
             self.labelRows.setText(f'{df.shape[0]} rows')
             ratings=df[df['score'] >= 0]['tconst'].count()
@@ -195,10 +238,14 @@ class MainWindow(QMainWindow):
                 if row_data['score']==0 or row_data['score']==1:
                     self.next_row()
                 else: 
-                    self.labelTitle.setText(f"({self.current_row+1}) {row_data['primaryTitle']}")
-                    #print(row_data['primaryTitle'])
+                    self.labelCounter.setText(str(self.current_row+1))
+                    self.labelTitle.setText(row_data['primaryTitle'])
+                    self.labelYear.setText(str(row_data['startYear']))
+                    self.labelAvgRating.setText(str(row_data['averageRating']))
+                    self.labelGenres.setText(', '.join(self.getGenres(row_data)))
+                    self.labelLength.setText(str(row_data['runtimeMinutes']))
                     self.labelDescription.setText(row_data['overview'])
-                    url_image = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2/{row_data.loc['poster']}"
+                    url_image = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2/{row_data['poster']}"
                     image = QImage()
                     image.loadFromData(requests.get(url_image).content)
                     self.labelPicture.setPixmap(QPixmap(image))
@@ -211,7 +258,6 @@ class MainWindow(QMainWindow):
                 self.labelLength.setText(str(row_data['runtimeMinutes']))
                 self.labelDescription.setText(row_data['overview'])
                 url_image = f"https://www.themoviedb.org/t/p/w600_and_h900_bestv2/{row_data.loc['poster']}"
-                #print(url_image)
                 image = QImage()
                 image.loadFromData(requests.get(url_image).content)
                 self.labelPicture.setPixmap(QPixmap(image))
