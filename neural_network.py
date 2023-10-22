@@ -34,6 +34,10 @@ class NeuralNetwork:
         return self.df
     
     @property
+    def getAccuracy(self):
+        return self.accuracy
+    
+    @property
     def whole(self)->pd.DataFrame:
         return self.wholeData
     
@@ -46,14 +50,14 @@ class NeuralNetwork:
         self.wholeData = pd.read_csv(path, sep='\t', header=0)
         self.wholeData=self.wholeData.sort_values(by = 'numVotes', ascending=False)
 
-    def like(self, row: int):
-        self.wholeData.loc[row, 'score']=1
+    def like(self, id: str):
+        self.wholeData.loc[self.wholeData['tconst'] == id, 'score']=1
 
-    def disLike(self,row: int):        
-        self.wholeData.loc[row, 'score']=0
+    def disLike(self,id: str):        
+        self.wholeData.loc[self.wholeData['tconst'] == id, 'score']=0
 
-    def skip(self, row: int):
-        self.wholeData.loc[row, 'score']=''
+    def skip(self, id: str):
+        self.wholeData.loc[self.wholeData['tconst'] == id, 'score']=np.nan
 
     def saveRatings(self, path:str):
         
@@ -69,11 +73,11 @@ class NeuralNetwork:
 
         self.wholeData.to_csv(path, sep="\t", index=False)
 
-    def getTypeNumbers(self):
-        return len(self.df['titleType'].unique())
+    # def getTypeNumbers(self):
+    #     return len(self.df['titleType'].unique())
     
-    def getGenreNumbers(self):
-        return len(self.df['genres'].unique())
+    # def getGenreNumbers(self):
+    #     return len(self.df['genres'].unique())
 
     def preparation(self):
         # typeNumbers=self.getTypeNumbers()
@@ -84,7 +88,7 @@ class NeuralNetwork:
         # if genreNumbers<21:
         #     for i in range(0,3-genreNumbers):
         self.deleteRowsWithoutScore()
-        features=self.df.drop(['tconst', 'overview', 'poster'],axis=1, inplace=False)
+        features=self.df.drop(['tconst', 'primaryTitle', 'overview', 'poster'],axis=1, inplace=False)
         self.X,self.y = features.iloc[:,:-1], features.iloc[:,-1]
         #features.iloc[:,:-1],features.iloc[:,-1]
         #print(self.y)
@@ -140,6 +144,8 @@ class NeuralNetwork:
         self.X_train=self.scaler.transform(self.X_train)
         self.X_test=self.scaler.transform(self.X_test)
         self.unratedX=self.scaler.transform(self.unratedX)
+        print(self.X_train[0])
+            
 
     def singleNormalizing(self, singleObject):
         singleObject=self.scaler.transform(singleObject)
@@ -147,12 +153,13 @@ class NeuralNetwork:
 
     def buildModel(self):
         input_params = self.X_train.shape[1]
+        print(f"Params: {str(input_params)}")
         self.model=tf.keras.models.Sequential()
         self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
         self.model.add(Dropout(0.5))
         self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
-        self.model.add(Dropout(0.5))
-        self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
+        #self.model.add(Dropout(0.3))
+        #self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
         self.model.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
         self.model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
     
@@ -182,11 +189,13 @@ class NeuralNetwork:
         #print(self.y_test[:5])
         self.y_pred01=(self.y_pred>0.5)#ezt majd ki kell szedni a mass és single predictnél
         self.accuracy=accuracy_score(self.y_test, self.y_pred01)
+        print(self.accuracy)
+        self.confusionMatrix()
 
     def confusionMatrix(self):
-        cm=confusion_matrix(self.y_test,self.y_pred)
-        #print(cm)
-        self.accuracy=accuracy_score(self.y_test, self.y_pred01)
+        cm=confusion_matrix(self.y_test,self.y_pred01)
+        print(cm)
+        #self.accuracy=accuracy_score(self.y_test, self.y_pred01)
         #print("Accuracy of the model: ",self.accuracy)
 
     def singlePredict(self, singleObject):
@@ -202,7 +211,7 @@ class NeuralNetwork:
         predicts=np.array(predicts).flatten()
         top_indices=np.argsort(predicts)[::-1]
         self.top_titles = [self.unratedXTitles.iloc[i] for i in top_indices]
-        self.top_types = [self.unratedXTypes.iloc[i] for i in top_indices]
+        #self.top_types = [self.unratedXTypes.iloc[i] for i in top_indices]
         self.top_predictions=(np.sort(predicts)[::-1]).tolist()
 
     def saveModel(self, path: str):

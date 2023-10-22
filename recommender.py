@@ -16,13 +16,13 @@ class Recommender:
     def wholeData(self):
         return self.nn.wholeData
 
-    def rate(self, action, rowNum):
+    def rate(self, action, id):
         if action=='l':
-            self.nn.like(rowNum)
+            self.nn.like(id)
         elif action=='d':
-            self.nn.disLike(rowNum)
+            self.nn.disLike(id)
         elif action=='s':
-            self.nn.skip(rowNum)
+            self.nn.skip(id)
 
     def saveRatings(self):
         self.nn.saveRatings(self.filename)
@@ -58,7 +58,7 @@ class Recommender:
         self.nn.prediction()
 
     def accuracy(self):
-        return self.nn.accuracy
+        return self.nn.getAccuracy
 
     def massPredict(self):
         self.nn.massPredict()
