@@ -1,9 +1,10 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QDialog, QFileDialog, QMessageBox, QTableWidgetItem, QFrame
-from PyQt6.QtGui import QIcon, QPixmap, QImage, QColor, QMovie
-from PyQt6.QtCore import Qt, QBasicTimer, QThread, pyqtSignal, QTimer
-from PyQt6 import uic, QtWidgets
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QDialog, QFileDialog, QMessageBox, QTableWidgetItem, QListWidget, QStyledItemDelegate, QPushButton
+from PyQt6.QtGui import QIcon, QPixmap, QImage, QColor, QMovie, QFont, QFontDatabase, QFontMetrics, QStandardItem
+from PyQt6.QtCore import Qt, QBasicTimer, QThread, pyqtSignal, QTimer, QEvent
+from PyQt6 import uic, QtWidgets, QtCore
 import sys, time, shutil, requests
 import neural_network
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -51,19 +52,26 @@ class MainWindow(QMainWindow):
         self.ButtonSearchSeries.setVisible(False)
         self.horizontalSlider.valueChanged.connect(self.sliderValueChanged)
         self.currentSliderValue=None
-        self.comboBox_genre.addItems(['Action','Crime','Horror','Comedy','Drama','Animation','Biography','Adventure','Western','Fantasy','Romance','Sci-Fi','Mystery','Family','Documentary','Game-Show'])
-        self.comboBox_genre.setCurrentIndex(0)
-        self.comboBox_genre.currentIndexChanged.connect(self.handleComboBoxGenreChange)
+        # self.comboBox_genre=CheckableComboBox()
+        self.listWidget_genres.addItems(['Action', 'Adult', 'Adventure',
+       'Animation', 'Biography', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy', 'Film-Noir', 'Game-Show', 'History', 'Horror',
+       'Music', 'Musical', 'Mystery', 'News', 'Reality-TV', 'Romance', 'Sci-Fi', 'Short', 'Sport', 'Talk-Show', 'Thriller', 'War', 'Western'])
+        self.listWidget_genres.setSelectionMode(QListWidget.SelectionMode.MultiSelection)
+        self.listWidget_genres.itemSelectionChanged.connect(self.handleListGenreChange)
         self.lineEdit_tconst.textChanged.connect(self.handleLineEdit_tconst)
         self.lineEdit_title.textChanged.connect(self.handlelineEdit_title)
-        self.lineEdit_overview.textChanged.connect(self.handlelineEdit_overview)
+        # self.lineEdit_overview.textChanged.connect(self.handlelineEdit_overview)
         self.lineEdit_startYear.textChanged.connect(self.handlelineEdit_startYear)
         self.lineEdit_runtime.textChanged.connect(self.handlelineEdit_runtime)
         self.lineEdit_avgratingimdb.textChanged.connect(self.handlelineEdit_avgratingimdb)
         self.lineEdit_numvotes.textChanged.connect(self.handlelineEdit_numvotes)
-        self.lineEdit_tmdbvoteavg.textChanged.connect(self.handlelineEdit_tmdbvoteavg)
-        self.lineEdit_poster.textChanged.connect(self.handleLinelineEdit_poster)
+        # self.lineEdit_tmdbvoteavg.textChanged.connect(self.handlelineEdit_tmdbvoteavg)
+        # self.lineEdit_poster.textChanged.connect(self.handleLinelineEdit_poster)
         self.moviesAndSeries=MovieSeries()
+        QFontDatabase.addApplicationFont("data/fonts/IndieFlower-Regular.ttf")
+        custom_font = QFont("Indie Flower")
+
+        self.labelBackground.setFont(QFont("Indie Flower", 130))
         self.ButtonHelp.clicked.connect(lambda: self.stackedWidget.setCurrentWidget(self.page_help))
         #self.labelGif.hide()
         self.labelInstruction.setText(''' 
@@ -86,6 +94,7 @@ class MainWindow(QMainWindow):
     def search(self):
         title_to_search=self.lineEditSearch.text()
         if rec.wholeData().loc[rec.wholeData()['primaryTitle'] == title_to_search].shape[0] > 0:
+            self.lineEditSearch.setText("")
             print("Movie found!")
             row=(rec.wholeData()).loc[(rec.wholeData())['primaryTitle'] == title_to_search]
             self.labelTitleYear.setText(f"{row['primaryTitle']} ({row['startYear']})")
@@ -344,10 +353,13 @@ class MainWindow(QMainWindow):
         dialogSuccessful=dialog.exec()
         self.selectedFile=dialog.selectedFiles()
         if(dialogSuccessful):
-            self.dataPreprocess()
-            rec.loadModel(path=self.selectedFile[0])
-            rec.modelPath=self.selectedFile[0].split("/")[-1]
-            self.accuracy()
+            try:
+                self.dataPreprocess()
+                rec.loadModel(path=self.selectedFile[0])
+                rec.modelPath=self.selectedFile[0].split("/")[-1]
+                self.accuracy()
+            except: 
+                QMessageBox.warning(self, 'Error', 'Model not compatible!')
 
     def makeModel(self):
         self.dataPreprocess()
@@ -386,6 +398,7 @@ class MainWindow(QMainWindow):
 
     def training_finished(self):
         # Once the training is complete, stop the gif and perform other operations
+        self.labelGif.setMinimumSize(500, 500)
         self.labelGif.setMovie(None)
         self.labelGif.setPixmap(QPixmap())
         rec.plotResult()
@@ -433,11 +446,8 @@ class MainWindow(QMainWindow):
     def handleLinelineEdit_poster(self):
         self.moviesAndSeries.poster=self.lineEdit_poster.text()
 
-    def handleComboBoxTypeChange(self):
-        self.moviesAndSeries.titleType=self.comboBox_type.currentText()
-
-    def handleComboBoxGenreChange(self):
-        self.moviesAndSeries.genre=self.comboBox_genre.currentText()
+    def handleListGenreChange(self):
+        self.moviesAndSeries.genres=self.listWidget_genres.selectedItems()
 
     def showEvent(self, event):
         #self.AllRadio()
@@ -486,23 +496,46 @@ class MainWindow(QMainWindow):
     def clear(self):
         self.lineEdit_tconst.clear()
         self.lineEdit_title.clear()
-        self.lineEdit_overview.clear()
+        # self.lineEdit_overview.clear()
         self.lineEdit_startYear.clear()
         self.lineEdit_runtime.clear()
         self.lineEdit_avgratingimdb.clear()
         self.lineEdit_numvotes.clear()
-        self.lineEdit_tmdbId.clear()
-        self.lineEdit_tmdbvoteavg.clear()
-        self.lineEdit_poster.clear()
-        self.comboBox_genre.setCurrentIndex(0)
+        self.listWidget_genres.clearSelection()
+        # self.lineEdit_tmdbId.clear()
+        # self.lineEdit_tmdbvoteavg.clear()
+        # self.lineEdit_poster.clear()
+
+    def TMDB_API(self, id):
+        API_KEY='fa9272e4589b7ec38b742c278e16a2f0'
+        query = 'https://api.themoviedb.org/3/movie/'+id+'?api_key='+API_KEY+'&language=en-US&external_source=imdb_id'
+        response =  requests.get(query)
+        movie=response.json()
+        #print(response.json())
+        #if id not found skip
+        if response.status_code == 200:
+            #id=movie['id']
+            overview=movie['overview']
+            tmdb_vote_avg=movie['vote_average']
+            poster=movie['poster_path']
+            self.moviesAndSeries.overview=overview
+            self.moviesAndSeries.tmdbVoteAvg=tmdb_vote_avg
+            self.moviesAndSeries.poster=poster
+            #return (id,overview,tmdb_vote_avg,poster)
+        #return (np.NaN,np.NaN,np.NaN,np.nan)
 
     def singlePredict(self):
         try:
+            self.TMDB_API(self.moviesAndSeries.tconst)
+        except: 
+            QMessageBox.warning(self, 'Error', 'Not a valid IMDb id!')
+        try:
             rec.makeDataFrame(self.moviesAndSeries)
             self.labelAccuracy.setText(rec.singlePrediction())
-        except:
-            QMessageBox.warning(self, 'Error', 'Please fill in the required field.')
-        self.clear()
+            self.clear()
+        except Exception as e:
+            QMessageBox.warning(self, 'Error', f'Please fill in the required field. {e}')
+        
 
 class FileNameWindow(QDialog):
     def __init__(self):
@@ -547,6 +580,124 @@ class TrainingThread(QThread):
     def run(self):
         rec.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
         self.training_finished.emit()
+
+
+    # # Subclass Delegate to increase item height
+    # class Delegate(QStyledItemDelegate):
+    #     def sizeHint(self, option, index):
+    #         size = super().sizeHint(option, index)
+    #         size.setHeight(20)
+    #         return size
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+
+    #     # Make the combo editable to set a custom text, but readonly
+    #     self.setEditable(True)
+    #     self.lineEdit().setReadOnly(True)
+    #     # Make the lineedit the same color as QPushButton
+    #     # palette = qApp.palette()
+    #     # palette.setBrush(QPalette.Base, palette.button())
+    #     # self.lineEdit().setPalette(palette)
+
+    #     # Use custom delegate
+    #     self.setItemDelegate(CheckableComboBox.Delegate())
+
+    #     # Update the text when an item is toggled
+    #     self.model().dataChanged.connect(self.updateText)
+
+    #     # Hide and show popup when clicking the line edit
+    #     self.lineEdit().installEventFilter(self)
+    #     self.closeOnLineEditClick = False
+
+    #     # Prevent popup from closing when clicking on an item
+    #     self.view().viewport().installEventFilter(self)
+
+    # def resizeEvent(self, event):
+    #     # Recompute text to elide as needed
+    #     self.updateText()
+    #     super().resizeEvent(event)
+
+    # def eventFilter(self, object, event):
+    #     if object == self.lineEdit():
+    #         if event.type() == QEvent.Type.MouseButtonRelease:
+    #             if self.closeOnLineEditClick:
+    #                 self.hidePopup()
+    #             else:
+    #                 self.showPopup()
+    #             return True
+    #         return False
+
+    #     if object == self.view().viewport():
+    #         if event.type() == QEvent.Type.MouseButtonRelease:
+    #             index = self.view().indexAt(event.pos())
+    #             item = self.model().item(index.row())
+
+    #             if item.checkState() == Qt.Checked:
+    #                 item.setCheckState(Qt.Unchecked)
+    #             else:
+    #                 item.setCheckState(Qt.Checked)
+    #             return True
+    #     return False
+
+    # def showPopup(self):
+    #     super().showPopup()
+    #     # When the popup is displayed, a click on the lineedit should close it
+    #     self.closeOnLineEditClick = True
+
+    # def hidePopup(self):
+    #     super().hidePopup()
+    #     # Used to prevent immediate reopening when clicking on the lineEdit
+    #     self.startTimer(100)
+    #     # Refresh the display text when closing
+    #     self.updateText()
+
+    # def timerEvent(self, event):
+    #     # After timeout, kill timer, and reenable click on line edit
+    #     self.killTimer(event.timerId())
+    #     self.closeOnLineEditClick = False
+
+    # def updateText(self):
+    #     texts = []
+    #     for i in range(self.model().rowCount()):
+    #         if self.model().item(i).checkState() == Qt.Checked:
+    #             texts.append(self.model().item(i).text())
+    #     text = ", ".join(texts)
+
+    #     # Compute elided text (with "...")
+    #     metrics = QFontMetrics(self.lineEdit().font())
+    #     elidedText = metrics.elidedText(text, Qt.ElideRight, self.lineEdit().width())
+    #     self.lineEdit().setText(elidedText)
+
+    # def addItem(self, text, data=None):
+    #     item = QStandardItem()
+    #     item.setText(text)
+    #     if data is None:
+    #         item.setData(text)
+    #     else:
+    #         item.setData(data)
+    #     item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
+    #     item.setData(Qt.CheckState.Unchecked, Qt.ItemDataRole.CheckStateRole)
+    #     self.model().appendRow(item)
+
+
+    # def addItems(self, texts, datalist=None):
+    #     for i, text in enumerate(texts):
+    #         try:
+    #             data = datalist[i]
+    #         except (TypeError, IndexError):
+    #             data = None
+    #         self.addItem(text, data)
+
+    # def currentData(self):
+    #     # Return the list of selected items data
+    #     res = []
+    #     for i in range(self.model().rowCount()):
+    #         if self.model().item(i).checkState() == Qt.Checked:
+    #             res.append(self.model().item(i).data())
+    #     return res
+
+
 
 # class RecommendationWindow(QMainWindow):
 #     def __init__(self):
@@ -1085,8 +1236,37 @@ class TrainingThread(QThread):
 #     def back(self):
 #         stackedWidget.setCurrentIndex(0)
 
+    
+
 if __name__ == '__main__':
     app=QApplication(sys.argv)
+    QFontDatabase.addApplicationFont("data/fonts/IndieFlower-Regular.ttf")
+    custom_font = QFont("Indie Flower")
+    app.setStyleSheet("""
+        
+        QLabel{
+            font-family: 'Indie Flower'; 
+        }
+                      
+        QCheckBox{
+            font-family: 'Indie Flower'; 
+        }
+                                    
+        QPushButton{
+            font-family: 'Indie Flower';
+        }
+
+        QPushButton:hover{ 
+            font-family: 'Indie Flower';
+        }
+
+        QPushButton:pressed{
+            font-family: 'Indie Flower';
+        }
+        QToolBox QPushButton{
+            font-family: 'Indie Flower';
+        }
+    """)
     #with open('styles.css', 'r') as file:
     #    app.setStyleSheet(file.read())
         

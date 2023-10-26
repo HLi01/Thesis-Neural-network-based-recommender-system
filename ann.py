@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 np.set_printoptions(suppress=True)
 pd.set_option('display.float_format', lambda x: '%.10f' % x)
 
-#csv_path="Lili.tsv"
+csv_path="TESZT.tsv"
 model_path="model.h5"
 
 class NeuralNetwork:
@@ -153,15 +153,15 @@ class NeuralNetwork:
 
     def buildModel(self):
         input_params = self.X_train.shape[1]
-        print(f"Params: {str(input_params)}")
+        #print(f"Params: {str(input_params)}")
         self.model=tf.keras.models.Sequential()
-        self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
+        self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.02), kernel_regularizer='l2', bias_regularizer='l2'))
         self.model.add(Dropout(0.5))
-        self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
-        #self.model.add(Dropout(0.3))
-        #self.model.add(tf.keras.layers.Dense(units=input_params, activation=tf.keras.layers.LeakyReLU(alpha=0.03), kernel_regularizer='l2', bias_regularizer='l2'))
+        self.model.add(tf.keras.layers.Dense(units=50, activation=tf.keras.layers.ELU(1.0), kernel_regularizer='l2', bias_regularizer='l1'))
+        self.model.add(Dropout(0.4))
+        # self.model.add(tf.keras.layers.Dense(units=100, activation=tf.keras.layers.LeakyReLU(alpha=0.02), kernel_regularizer='l2', bias_regularizer='l2'))
         self.model.add(tf.keras.layers.Dense(units=1, activation='sigmoid'))
-        self.model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+        self.model.compile(optimizer=tf.keras.optimizers.Adam(amsgrad=True), loss='binary_crossentropy', metrics=['accuracy'])
     
     def trainModel(self, batchSize:int, epochNum:int, valSplit:int, shuffle:bool):
         es = EarlyStopping(monitor='val_loss', min_delta=0, patience = 100)
@@ -222,21 +222,21 @@ class NeuralNetwork:
         self.model = tf.keras.models.load_model(path)
         self.modelPath=path
 
-# nn=NeuralNetwork()
-# nn.loadFile(csv_path=csv_path)
-
-# nn.preprocess()
-# nn.trainTestSplit(0.25)
-# nn.normalizing()
-# nn.buildModel()
-# nn.trainModel(batchSize=15, epochNum=400, valSplit=0.25, shuffle=True)
-# nn.plotResult()
-# nn.getRatingsRatio()
-# #nn.loadModel(model_path)
-# nn.predict()
-# nn.confusionMatrix()
-# nn.saveModel()
-# nn.massPredict()
+nn=NeuralNetwork()
+nn.loadFile(path=csv_path)
+nn.preparation()
+#nn.preprocess()
+nn.trainTestSplit(0.25)
+nn.normalizing()
+nn.buildModel()
+nn.trainModel(batchSize=30, epochNum=500, valSplit=0.25, shuffle=True)
+nn.plotResult()
+nn.getRatingsRatio()
+#nn.loadModel(model_path)
+nn.prediction()
+#nn.confusionMatrix()
+#nn.saveModel()
+nn.massPredict()
 
 
 
