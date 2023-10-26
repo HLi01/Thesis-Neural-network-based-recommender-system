@@ -61,10 +61,10 @@ class MainWindow(QMainWindow):
         self.lineEdit_tconst.textChanged.connect(self.handleLineEdit_tconst)
         self.lineEdit_title.textChanged.connect(self.handlelineEdit_title)
         # self.lineEdit_overview.textChanged.connect(self.handlelineEdit_overview)
-        self.lineEdit_startYear.textChanged.connect(self.handlelineEdit_startYear)
-        self.lineEdit_runtime.textChanged.connect(self.handlelineEdit_runtime)
-        self.lineEdit_avgratingimdb.textChanged.connect(self.handlelineEdit_avgratingimdb)
-        self.lineEdit_numvotes.textChanged.connect(self.handlelineEdit_numvotes)
+        self.spinBox_year.valueChanged.connect(self.handlelineEdit_startYear)
+        self.spinBox_runtime.valueChanged.connect(self.handlelineEdit_runtime)
+        self.doubleSpinBox_rating.valueChanged.connect(self.handlelineEdit_avgratingimdb)
+        self.spinBox_votes.valueChanged.connect(self.handlelineEdit_numvotes)
         # self.lineEdit_tmdbvoteavg.textChanged.connect(self.handlelineEdit_tmdbvoteavg)
         # self.lineEdit_poster.textChanged.connect(self.handleLinelineEdit_poster)
         self.moviesAndSeries=MovieSeries()
@@ -426,25 +426,25 @@ class MainWindow(QMainWindow):
         self.moviesAndSeries.overview=self.lineEdit_overview.text()
 
     def handlelineEdit_startYear(self):
-        self.moviesAndSeries.startYear=self.lineEdit_startYear.text()
+        self.moviesAndSeries.startYear=self.spinBox_year.value()
 
     def handlelineEdit_runtime(self):
-        self.moviesAndSeries.runtimeMinutes=self.lineEdit_runtime.text()
+        self.moviesAndSeries.runtimeMinutes=self.spinBox_runtime.value()
 
     def handlelineEdit_avgratingimdb(self):
-        self.moviesAndSeries.averageRating=self.lineEdit_avgratingimdb.text()
+        self.moviesAndSeries.averageRating=self.doubleSpinBox_rating.value()
         
     def handlelineEdit_numvotes(self):
-        self.moviesAndSeries.numVotes=self.lineEdit_numvotes.text()
+        self.moviesAndSeries.numVotes=self.spinBox_votes.value()
 
-    def handlelineEdit_tmdbId(self):
-        self.moviesAndSeries.tmdbId=self.lineEdit_tmdbId.text()
+    # def handlelineEdit_tmdbId(self):
+    #     self.moviesAndSeries.tmdbId=self.lineEdit_tmdbId.text()
 
-    def handlelineEdit_tmdbvoteavg(self):
-        self.moviesAndSeries.tmdbVoteAvg=self.lineEdit_tmdbvoteavg.text()
+    # def handlelineEdit_tmdbvoteavg(self):
+    #     self.moviesAndSeries.tmdbVoteAvg=self.lineEdit_tmdbvoteavg.text()
 
-    def handleLinelineEdit_poster(self):
-        self.moviesAndSeries.poster=self.lineEdit_poster.text()
+    # def handleLinelineEdit_poster(self):
+    #     self.moviesAndSeries.poster=self.lineEdit_poster.text()
 
     def handleListGenreChange(self):
         self.moviesAndSeries.genres=self.listWidget_genres.selectedItems()
@@ -497,10 +497,10 @@ class MainWindow(QMainWindow):
         self.lineEdit_tconst.clear()
         self.lineEdit_title.clear()
         # self.lineEdit_overview.clear()
-        self.lineEdit_startYear.clear()
-        self.lineEdit_runtime.clear()
-        self.lineEdit_avgratingimdb.clear()
-        self.lineEdit_numvotes.clear()
+        self.spinBox_year.setValue(2020)
+        self.spinBox_runtime.setValue(120)
+        self.doubleSpinBox_rating.setValue(7.5)
+        self.spinBox_votes.setValue(100000)
         self.listWidget_genres.clearSelection()
         # self.lineEdit_tmdbId.clear()
         # self.lineEdit_tmdbvoteavg.clear()
@@ -531,11 +531,11 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, 'Error', 'Not a valid IMDb id!')
         try:
             rec.makeDataFrame(self.moviesAndSeries)
-            self.labelAccuracy.setText(rec.singlePrediction())
-            self.clear()
+            
         except Exception as e:
             QMessageBox.warning(self, 'Error', f'Please fill in the required field. {e}')
-        
+        self.labelAccuracy.setText(rec.singlePrediction(self.moviesAndSeries))
+        self.clear()
 
 class FileNameWindow(QDialog):
     def __init__(self):

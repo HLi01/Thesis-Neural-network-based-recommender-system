@@ -93,27 +93,42 @@ class Recommender:
                 self.predictionOrderN.append(f'{self.nn.top_titles[idx]} ({round(self.nn.top_predictions[idx],5)})')
 
     def makeDataFrame(self, movieObj: MovieSeries):
+        genres= ['Action', 'Adult', 'Adventure',
+       'Animation', 'Biography', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy', 'Film-Noir', 'Game-Show', 'History', 'Horror',
+       'Music', 'Musical', 'Mystery', 'News', 'Reality-TV', 'Romance', 'Sci-Fi', 'Short', 'Sport', 'Talk-Show', 'Thriller', 'War', 'Western']
         movie_dict = {
                 'tconst': movieObj.tconst,
                 'primaryTitle': movieObj.primaryTitle,
-                # 'titleType': movieObj.titleType,
                 'overview': movieObj.overview,
                 'startYear': movieObj.startYear,
                 'runtimeMinutes': movieObj.runtimeMinutes,
-                'genres': movieObj.genre,
                 'averageRating': movieObj.averageRating,
                 'numVotes': movieObj.numVotes,
-                # 'tmdbId': movieObj.tmdbId,
                 'tmdbVoteAvg': movieObj.tmdbVoteAvg,
                 'poster': movieObj.poster
-            }       
-        self.nn.SingleObject=pd.DataFrame(movie_dict, index=[0])
+            }
+        try: 
+            self.nn.SingleObject=pd.DataFrame(movie_dict, index=[0])
+        except Exception as e:
+            print(e)
+        for genre in genres:
+            self.nn.SingleObject[genre] = 0
 
-    def singlePrediction(self):
+        try: 
+            for index, row in self.nn.SingleObject.iterrows():
+                genres_list = movieObj.genres
+                for genre in genres_list:
+                    self.nn.SingleObject.at[index, genre] = 1
+        except Exception as e: 
+            print(e)
+        print(self.nn.SingleObject)
+        self.nn.SingleObject=self.nn.SingleObject[['tconst', 'primaryTitle', 'startYear', 'runtimeMinutes', 'averageRating', 'numVotes', 'Action', 'Adult', 'Adventure', 'Animation', 'Biography', 'Comedy', 'Crime', 'Documentary', 'Drama', 'Family', 'Fantasy', 'Film-Noir', 'Game-Show', 'History', 'Horror', 'Music', 'Musical', 'Mystery', 'News', 'Reality-TV', 'Romance', 'Sci-Fi', 'Short', 'Sport', 'Talk-Show', 'Thriller', 'War', 'Western', 'overview', 'tmdbVoteAvg', 'poster']]
+
+    def singlePrediction(self, movieObj: MovieSeries):
         output= np.array(self.nn.singlePredict(self.nn.SingleObject)).flatten()[0]
-        print(output)
+        #print(output)
         if output < 0.5: 
-            return f"You would most likely not enjoy this movie. ({output:.2f})"
+            return f"You would most likely not enjoy {movieObj.primaryTitle} ({output:.2f})"
         else:
-            return f"You would most likely enjoy this movie. ({output:.2f})"
+            return f"You would most likely enjoy {movieObj.primaryTitle} ({output:.2f})"
         
