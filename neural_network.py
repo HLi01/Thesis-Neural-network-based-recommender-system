@@ -60,33 +60,9 @@ class NeuralNetwork:
         self.wholeData.loc[self.wholeData['tconst'] == id, 'score']=np.nan
 
     def saveRatings(self, path:str):
-        
-        #for index, row in (self.wholeData[self.wholeData['score'].isna()]).iterrows():
-            # print(row['primaryTitle'], ": ", row['startYear'], "(",row['tconst'],")")
-            # rating=input()
-            # if rating=="e":
-            #     break
-            # if rating==" ":
-            #     self.wholeData.loc[self.wholeData['tconst']==row['tconst'], ['score']] = np.nan
-            # else: 
-            #     self.wholeData.loc[self.df['tconst']==row['tconst'], ['score']] = rating
-
         self.wholeData.to_csv(path, sep="\t", index=False)
 
-    # def getTypeNumbers(self):
-    #     return len(self.df['titleType'].unique())
-    
-    # def getGenreNumbers(self):
-    #     return len(self.df['genres'].unique())
-
     def preparation(self):
-        # typeNumbers=self.getTypeNumbers()
-        # if typeNumbers<3:
-        #     self.df.insert(0, 'column_name', value)
-                
-        # genreNumbers=self.getGenreNumbers()
-        # if genreNumbers<21:
-        #     for i in range(0,3-genreNumbers):
         self.deleteRowsWithoutScore()
         features=self.df.drop(['tconst', 'primaryTitle', 'overview', 'poster'],axis=1, inplace=False)
         self.X,self.y = features.iloc[:,:-1], features.iloc[:,-1]
@@ -201,7 +177,7 @@ class NeuralNetwork:
     def singlePredict(self, singleObject):
         singleObject=self.singlePreprocess(singleObject)
         singleObject=self.singleNormalizing(singleObject)
-        print('ASD:', singleObject)  
+        #print('ASD:', singleObject)  
         self.singlePrediction=self.model.predict(singleObject)
         return self.singlePrediction
 
@@ -221,6 +197,9 @@ class NeuralNetwork:
     def loadModel(self, path: str):
         self.model = tf.keras.models.load_model(path)
         self.modelPath=path
+        #weights = self.model.get_weights()
+        #print(f"Weights: {weights[4]}")
+        #print(f"Biases: {biases}")
 
 # nn=NeuralNetwork()
 # nn.loadFile(csv_path=csv_path)
