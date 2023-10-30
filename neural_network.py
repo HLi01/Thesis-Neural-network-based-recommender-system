@@ -1,6 +1,7 @@
 import pandas as pd
 import category_encoders as ce
 import numpy as np
+import os
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import category_encoders as ce
@@ -13,7 +14,6 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 np.set_printoptions(suppress=True)
 pd.set_option('display.float_format', lambda x: '%.10f' % x)
 
-#csv_path="Lili.tsv"
 model_path="model.h5"
 
 class NeuralNetwork:
@@ -60,21 +60,17 @@ class NeuralNetwork:
         self.wholeData.loc[self.wholeData['tconst'] == id, 'score']=np.nan
 
     def saveRatings(self, path:str):
-        self.wholeData.to_csv(path, sep="\t", index=False)
+        save_path = os.path.join("data/dataframes", path)
+        self.wholeData.to_csv(save_path, sep="\t", index=False)
 
     def preparation(self):
         self.deleteRowsWithoutScore()
         features=self.df.drop(['tconst', 'primaryTitle', 'overview', 'poster'],axis=1, inplace=False)
         self.X,self.y = features.iloc[:,:-1], features.iloc[:,-1]
-        #features.iloc[:,:-1],features.iloc[:,-1]
-        #print(self.y)
         self.getRowsWithoutScore()
         self.unratedXTitles=self.unratedData['primaryTitle']
-        #self.unratedXTypes=self.unratedData['titleType']
         features=self.unratedData.drop(['tconst', 'primaryTitle', 'overview', 'poster'],axis=1, inplace=False)
         self.unratedX=features.iloc[:,:-1]
-        #print(self.unratedX['genres'].unique())
-        #print(self.X['genres'].unique())
 
     def deleteAllRatings(self):
         self.df.iloc[:,-1:]=np.nan
@@ -86,8 +82,6 @@ class NeuralNetwork:
         self.unratedData=self.wholeData[self.wholeData['score'].isna()]
     
     def getRatingsRatio(self) -> tuple:
-        #print("Liked: ",len(self.wholeData[self.wholeData['score'] == 1]))
-        #print("Disliked: ",len(self.wholeData[self.wholeData['score'] == 0]))
         return (len(self.wholeData[self.wholeData['score'] == 1]), len(self.wholeData[self.wholeData['score'] == 0]) )
 
     def preprocess(self):
@@ -192,7 +186,8 @@ class NeuralNetwork:
 
     def saveModel(self, path: str):
         #self.model.save("model_binary"+str(self.accuracy)[2:4]+".h5")
-        self.model.save(path)
+        save_path = os.path.join("data/models", path)
+        self.model.save(save_path)
 
     def loadModel(self, path: str):
         self.model = tf.keras.models.load_model(path)

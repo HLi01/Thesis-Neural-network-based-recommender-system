@@ -30,7 +30,7 @@ class Recommender:
         print(f"The best cutoff for achieving a 50-50 balance is: {best_cutoff}")
         return best_cutoff
 
-    def importFile(self, path, type):
+    def importIMDbWatchlist(self, path, type):
         watchlist = pd.read_csv(path, header=0)
         if type=='movies':
             watchlist[watchlist['Title Type'] == 'movie']
@@ -93,34 +93,7 @@ class Recommender:
     def massRecommend(self, n):
         self.predictionOrderN.clear()
         for idx in range(n):
-            #print(idx, ' :', self.nn.top_types[idx],' ', self.nn.top_titles[idx], '(',round(self.nn.top_predictions[idx],5) ,')')
             self.predictionOrderN.append(f'{self.nn.top_titles[idx]} ({round(self.nn.top_predictions[idx],5)})')
-        # if filter=='movies':
-        #     counter=0
-        #     idx=0
-        #     print('MOVIES', n)
-        #     while counter<n and idx<len(self.nn.top_titles):
-        #         if self.nn.top_types[idx] == 'movie':
-        #             counter+=1
-        #             print(counter, ' :', self.nn.top_types[idx],' ', self.nn.top_titles[idx], '(',round(self.nn.top_predictions[idx],5) ,')')
-        #             self.predictionOrderN.append(f'{self.nn.top_titles[idx]} ({round(self.nn.top_predictions[idx],5)})')     
-        #         idx+=1
-        # elif filter=='series':
-        #     counter=0
-        #     idx=0
-        #     print('SERIES', counter, n, idx)
-        #     while counter<n and idx<len(self.nn.top_titles):
-        #         print(self.nn.top_types[idx])
-        #         if self.nn.top_types[idx] == 'tvSeries' or self.nn.top_types[idx] == 'tvMiniSeries':
-        #             counter+=1
-        #             print(counter, ' :', self.nn.top_types[idx],' ', self.nn.top_titles[idx], '(',round(self.nn.top_predictions[idx],5) ,')')
-        #             self.predictionOrderN.append(f'{self.nn.top_titles[idx]} ({round(self.nn.top_predictions[idx],5)})')     
-        #         idx+=1
-        # else: 
-        #     print('ALL', n)
-        #     for idx in range(n):
-        #         print(idx, ' :', self.nn.top_types[idx],' ', self.nn.top_titles[idx], '(',round(self.nn.top_predictions[idx],5) ,')')
-        #         self.predictionOrderN.append(f'{self.nn.top_titles[idx]} ({round(self.nn.top_predictions[idx],5)})')
 
     def makeDataFrame(self, movieObj: MovieSeries):
         genres= ['Action', 'Adult', 'Adventure',

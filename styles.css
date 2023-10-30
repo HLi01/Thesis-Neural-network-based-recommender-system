@@ -1,0 +1,22 @@
+QLabel{
+	font-family: 'Indie Flower'; 
+}
+                      
+QCheckBox{
+	font-family: 'Indie Flower'; 
+}
+                                    
+QPushButton{
+	font-family: 'Indie Flower';
+}
+
+QPushButton:hover{ 
+	font-family: 'Indie Flower';
+}
+
+QPushButton:pressed{
+	font-family: 'Indie Flower';
+}
+QToolBox QPushButton{
+	font-family: 'Indie Flower';
+}
