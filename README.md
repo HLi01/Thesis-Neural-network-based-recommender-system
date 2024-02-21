@@ -1,3 +1,2 @@
-Ez az én projektmunkám/szakdolgozatom.
-Cím: Neurális hálózat alapú film- és sorozatajánló rendszer
-Title: Neural network-based movie and TV series recommendation system
+This is my thesis implementation code, which I created for my computer science bachelor's degree. 
+The goal was to create a neural network-based movie and TV series recommendation system.
